@@ -1,0 +1,15 @@
+# Lifecycle hooks — triggered on task state changes
+# --------------------------------------------------
+# Each hook specifies a trigger condition and an action.
+
+# hooks:
+#   on_status_change:
+#     - when:
+#         status: done
+#       action: move_to_archive
+#
+#   on_create:
+#     - action: validate_frontmatter
+#
+#   on_claim_timeout:
+#     - action: release_and_notify

@@ -1,0 +1,22 @@
+<!-- Base template — all pages extend this.
+     Includes HTMX, minimal CSS framework, and shared nav/layout. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Diatagma{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/htmx.org@2"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <!-- TODO: navigation links -->
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

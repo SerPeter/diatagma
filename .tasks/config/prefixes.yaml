@@ -1,0 +1,16 @@
+# Prefix definitions
+# ------------------
+# Each prefix groups tasks by area/project. Max 5 letters.
+# Numbers start at 001 and grow as needed.
+
+DIA:
+  description: "Diatagma core tool development"
+  template: default  # references templates/default.md
+
+# Examples for other projects:
+# CORE:
+#   description: "Core ML pipeline"
+#   template: default
+# EX:
+#   description: "Exploration and research spikes"
+#   template: spike

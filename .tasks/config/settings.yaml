@@ -1,0 +1,38 @@
+# Diatagma settings
+# -----------------
+# These control tool behavior. Task files themselves remain the source of truth.
+
+# Default assignee for new tasks (leave empty for unassigned)
+default_assignee: ""
+
+# Statuses available for tasks (order matters for kanban columns)
+statuses:
+  - pending
+  - in-progress
+  - in-review
+  - done
+  - cancelled
+
+# Task types
+types:
+  - epic
+  - feature
+  - bug
+  - spike
+  - chore
+  - docs
+
+# Story point scale (Fibonacci)
+story_point_scale: [1, 2, 3, 5, 8, 13, 21]
+
+# Business value range (log-scaled importance)
+business_value_range: [-1000, 1000]
+
+# Agent claim timeout in minutes (auto-release if agent doesn't heartbeat)
+claim_timeout_minutes: 30
+
+# Web dashboard port
+web_port: 8742
+
+# MCP transport: "stdio" or "sse"
+mcp_transport: "stdio"

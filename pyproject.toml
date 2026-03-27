@@ -1,0 +1,165 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "diatagma"
+version = "0.1.0"
+description = "File-based task coordination for humans and AI agents — MCP server + web dashboard over plain markdown."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [
+    { name = "SerPeter" },
+]
+keywords = [
+    "task-management",
+    "mcp",
+    "ai-agents",
+    "kanban",
+    "markdown",
+    "agile",
+    "project-management",
+    "coordination",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Office/Business :: Scheduling",
+    "Typing :: Typed",
+]
+dependencies = [
+    # --- Core ---
+    "pydantic~=2.12",
+    "pydantic-settings~=2.12",
+    "pyyaml~=6.0",              # YAML frontmatter parsing
+    "networkx~=3.4",            # DAG resolution for dependencies
+    "python-frontmatter~=1.1",  # Markdown + YAML frontmatter read/write
+    "loguru~=0.7",
+    "orjson>=3.10",             # Fast JSON for cache serialization
+
+    # --- MCP Server ---
+    "fastmcp~=3.1",             # MCP tool server
+
+    # --- Web Dashboard ---
+    "fastapi~=0.115",
+    "uvicorn[standard]~=0.34",
+    "jinja2~=3.1",
+    "python-multipart~=0.0.20", # Form handling
+
+    # --- File watching ---
+    "watchfiles~=1.0",          # Rust-based filesystem watcher
+
+    # --- CLI ---
+    "typer~=0.21",
+]
+
+[project.optional-dependencies]
+otel = [
+    "opentelemetry-api~=1.33",
+    "opentelemetry-sdk~=1.33",
+    "opentelemetry-exporter-otlp-proto-grpc~=1.33",
+    "opentelemetry-exporter-otlp-proto-http~=1.33",
+]
+
+[project.scripts]
+diatagma = "diatagma.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/SerPeter/diatagma"
+Repository = "https://github.com/SerPeter/diatagma"
+Issues = "https://github.com/SerPeter/diatagma/issues"
+Changelog = "https://github.com/SerPeter/diatagma/blob/main/CHANGELOG.md"
+
+# --------------------------------------------------------------------------- #
+# Dev dependencies
+# --------------------------------------------------------------------------- #
+[dependency-groups]
+dev = [
+    "pytest~=9.0",
+    "pytest-asyncio~=1.1",
+    "pytest-cov~=7.0",
+    "pytest-xdist~=3.8",
+    "pre-commit~=4.5",
+    "ruff~=0.15",
+    "ty~=0.0.15",
+    "httpx~=0.28",              # TestClient for FastAPI
+]
+
+# --------------------------------------------------------------------------- #
+# Hatch
+# --------------------------------------------------------------------------- #
+[tool.hatch.build.targets.wheel]
+packages = ["src/diatagma"]
+
+[tool.hatch.envs.default]
+installer = "uv"
+
+# --------------------------------------------------------------------------- #
+# Pytest
+# --------------------------------------------------------------------------- #
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "-q",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: requires running web server or MCP server",
+]
+
+# --------------------------------------------------------------------------- #
+# ty (type checker)
+# --------------------------------------------------------------------------- #
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.analysis]
+allowed-unresolved-imports = [
+    "opentelemetry",
+    "opentelemetry.*",
+    "opentelemetry.*.*",
+    "opentelemetry.*.*.*",
+    "opentelemetry.*.*.*.*",
+    "opentelemetry.*.*.*.*.*",
+]
+
+# --------------------------------------------------------------------------- #
+# Semantic Release
+# --------------------------------------------------------------------------- #
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+commit_parser = "conventional"
+allow_zero_version = true
+major_on_zero = false
+tag_format = "v{version}"
+
+[tool.semantic_release.branches.main]
+match = "^(main|master)$"
+prerelease = false
+
+[tool.semantic_release.branches.feature]
+match = "^feature/.*$"
+prerelease = true
+prerelease_token = "dev"
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = ['chore\(release\):.*']
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+mask_initial_release = false

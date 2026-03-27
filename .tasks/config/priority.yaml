@@ -1,0 +1,25 @@
+# Priority scoring configuration (WSJF-style)
+# ---------------------------------------------
+# priority = (business_value * w_bv + time_criticality * w_tc + risk_reduction * w_rr)
+#            / max(story_points, 1)
+#            + blocked_bonus * unblocks_count
+#            + age_bonus * days_since_created
+#            + due_date_urgency
+
+weights:
+  business_value: 1.0
+  time_criticality: 0.5    # derived from due_date proximity
+  risk_reduction: 0.3      # manual field, optional
+
+  # Bonus per task that this task unblocks
+  unblocks_bonus: 50.0
+
+  # Bonus per day since task was created (prevents starvation)
+  age_bonus_per_day: 0.5
+
+  # Urgency multiplier when due date is within N days
+  due_date_urgency:
+    critical_days: 3       # max urgency boost
+    warning_days: 7        # moderate urgency boost
+    critical_bonus: 200.0
+    warning_bonus: 50.0

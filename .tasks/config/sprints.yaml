@@ -1,0 +1,14 @@
+# Sprint definitions
+# ------------------
+# Define sprint boundaries for sprint planning and velocity tracking.
+
+# sprints:
+#   - name: "Sprint 1"
+#     start: 2026-03-24
+#     end: 2026-04-07
+#     goal: "Core models, parser, and store"
+#
+#   - name: "Sprint 2"
+#     start: 2026-04-07
+#     end: 2026-04-21
+#     goal: "MCP server and basic dashboard"
