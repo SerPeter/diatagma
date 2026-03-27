@@ -2,14 +2,15 @@
 
 ## What is this?
 
-File-based task coordination for humans and AI agents. Markdown files with YAML frontmatter are the source of truth. MCP server + web dashboard are read/write interfaces on top.
+Spec-driven story coordination for humans and AI agents. Markdown spec files with YAML frontmatter are the source of truth. MCP server + web dashboard are read/write interfaces on top.
 
 ## Tech Stack
 
 - **Python 3.12+** (develop on 3.14)
 - **uv** for package management
-- **FastMCP 3.x** for MCP server
-- **FastAPI + HTMX + Jinja2** for web dashboard
+- **FastMCP 3.x** for MCP server ([ADR-001](docs/adr/001-use-fastmcp-over-official-sdk.md))
+- **Litestar** for web API backend ([ADR-002](docs/adr/002-litestar-over-fastapi.md))
+- **React + Vite** for dashboard frontend ([ADR-003](docs/adr/003-react-vite-frontend.md))
 - **networkx** for dependency DAG
 - **SQLite** for read cache (`.tasks/.cache/tasks.db`)
 - **Pydantic 2.x** for all models and validation
@@ -21,21 +22,50 @@ File-based task coordination for humans and AI agents. Markdown files with YAML 
 src/diatagma/
   core/    — shared library (models, parser, store, cache, graph, priority)
   mcp/     — FastMCP server (thin wrapper over core)
-  web/     — FastAPI dashboard (thin wrapper over core)
+  web/     — Litestar JSON API (thin wrapper over core)
+frontend/  — React dashboard (Vite SPA)
 ```
 
-**core/ is the only layer that touches the filesystem.** MCP and web import from core, never from each other.
+**core/ is the only layer that touches the filesystem.** MCP and web import from core, never from each other. See [docs/architecture.md](docs/architecture.md) for full diagrams and data flows.
 
-## Task System (Dogfooding)
+## Terminology
 
-This repo uses its own `.tasks/` directory. Tasks use the `DIA` prefix.
+- **Spec** = any markdown file in `.tasks/` (the unit of work)
+- **Story** = a spec from the user's perspective (`.story.md`)
+- **Epic** = a spec grouping related stories (`.epic.md`)
+- **Spike** = a research spec producing ADRs/research docs (`.spike.md`)
+
+## Spec System (Dogfooding)
+
+This repo uses its own `.tasks/` directory with the `DIA` prefix.
 
 - Config: `.tasks/config/`
-- Templates: `.tasks/config/templates/`
+- Templates: `.tasks/config/templates/` (story.md, epic.md, spike.md)
+- Roadmap: `.tasks/ROADMAP.md`
 - Changelog: `.tasks/changelog.md`
-- Active tasks: `.tasks/DIA-*.md`
+- Active specs: `.tasks/DIA-*.{story,epic,spike}.md`
 - Backlog: `.tasks/backlog/`
 - Archive: `.tasks/archive/`
+
+## Documentation
+
+- `docs/spec.md` — product specification
+- `docs/architecture.md` — system architecture, diagrams, flows
+- `docs/adr/NNN-slug.md` — Architecture Decision Records
+- `docs/research/YYMMDD_slug.md` — research documents from spikes
+
+**ADRs and research docs are sources of truth for decisions.** Always check relevant ADRs before revisiting a settled choice.
+
+## Workflow
+
+```
+write spec → derive tests from behavior scenarios → implement → verify against spec
+```
+
+For architectural decisions:
+```
+spike → research doc + ADR → informed stories reference these
+```
 
 ## Commands
 
@@ -46,7 +76,7 @@ uv run ruff check --fix .        # Lint
 uv run ruff format .             # Format
 uv run ty check                  # Type check
 uv run pre-commit run --all-files  # All pre-commit hooks
-uv run diatagma serve            # Start web dashboard
+uv run diatagma serve            # Start web API server
 uv run diatagma mcp              # Start MCP server
 ```
 
@@ -57,3 +87,4 @@ uv run diatagma mcp              # Start MCP server
 - All models in `core/models.py`, all config in `core/config.py`
 - Tests mirror source structure: `tests/test_<module>.py`
 - No database — the filesystem is the database, SQLite is just a cache
+- Spec files use typed extensions: `.story.md`, `.epic.md`, `.spike.md`

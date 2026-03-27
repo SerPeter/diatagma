@@ -56,12 +56,6 @@ CLAUDE.local.md
 # =============================================================================
 # Project-specific
 # =============================================================================
-# Memgraph data persistence
-data/memgraph/
-
-# TEI model cache
-data/tei/
-
 # Environment files (secrets) — .env.dist is tracked
 .env
 .env.*

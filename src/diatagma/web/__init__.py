@@ -1,1 +1,1 @@
-"""Web dashboard — FastAPI + HTMX + Jinja2."""
+"""Web API — Litestar JSON backend for the React dashboard."""

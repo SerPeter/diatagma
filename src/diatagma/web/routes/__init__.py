@@ -1,1 +1,1 @@
-"""Route modules for the web dashboard."""
+"""Route controllers for the web API."""

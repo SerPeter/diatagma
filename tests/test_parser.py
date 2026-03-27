@@ -1,1 +1,1 @@
-"""Tests for core.parser — markdown + YAML frontmatter round-tripping."""
+"""Tests for core.parser — spec file round-tripping (markdown + YAML frontmatter)."""

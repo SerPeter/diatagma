@@ -1,9 +1,9 @@
 """Shared test fixtures.
 
 Provides:
-    tmp_tasks_dir  — a temporary .tasks/ directory with config and sample tasks
-    sample_task    — a parsed Task object for unit tests
-    task_store     — a TaskStore pointed at tmp_tasks_dir
+    tmp_tasks_dir  — a temporary .tasks/ directory with config and sample specs
+    sample_spec    — a parsed Spec object for unit tests
+    spec_store     — a SpecStore pointed at tmp_tasks_dir
 """
 
 import pytest

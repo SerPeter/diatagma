@@ -1,6 +1,6 @@
-"""Board views — Kanban, sprint planning, dependency graph.
+"""Board data endpoints — Kanban, sprint planning, dependency graph.
 
-Serves interactive board views. Kanban columns are driven by task
-status. Sprint view groups by sprint field. Dependency graph uses
-a d3-force or vis.js visualization fed by the networkx DAG.
+Provides pre-shaped JSON for board views: specs grouped by status
+(kanban), grouped by sprint (planning), and graph edges for the
+dependency visualization.
 """

@@ -1,6 +1,7 @@
-"""JSON API routes for dashboard interactivity.
+"""JSON API routes for the React dashboard.
 
-Provides endpoints consumed by client-side JS for operations that
-need JSON responses: drag-and-drop status changes, inline field
-edits, graph data for visualization, search-as-you-type.
+Provides RESTful endpoints consumed by the frontend: spec CRUD,
+status changes, graph data for visualization, search, board state.
+
+All routes return JSON. No HTML rendering — that's the frontend's job.
 """

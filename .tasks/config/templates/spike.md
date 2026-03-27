@@ -4,7 +4,8 @@
 
 ## Context
 
-<!-- Why this spike is needed — what decision it unblocks -->
+<!-- Why this spike is needed — what decision it unblocks.
+     Link to the story or epic that triggered this spike. -->
 
 ## Research Questions
 
@@ -16,8 +17,17 @@
 ## Findings
 
 <!-- Filled during research. Document answers to each question above,
-     with evidence/links. -->
+     with evidence and links. -->
+
+## Deliverables
+
+<!-- What this spike produces. At least one of: -->
+
+- [ ] ADR at `docs/adr/NNN-slug.md` — for architectural decisions
+- [ ] Research doc at `docs/research/YYMMDD_slug.md` — for detailed findings
+- [ ] Updated `docs/architecture.md` — if architecture is affected
 
 ## Recommendation
 
-<!-- Summary conclusion and proposed next steps based on findings. -->
+<!-- Summary conclusion and proposed next steps based on findings.
+     Should be actionable — "do X" not "maybe consider X". -->

@@ -1,1 +1,1 @@
-"""Tests for core.priority — WSJF scoring and task ranking."""
+"""Tests for core.priority — WSJF scoring and spec ranking."""

@@ -12,5 +12,5 @@ Key class:
         .priority   → PriorityConfig
         .sprints    → list[Sprint]
         .hooks      → HooksConfig
-        .templates  → dict[str, str]  (prefix/type → template content)
+        .templates  → dict[str, str]  (spec_type → template content)
 """

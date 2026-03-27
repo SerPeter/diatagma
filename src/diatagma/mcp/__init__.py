@@ -1,1 +1,1 @@
-"""MCP server — exposes task operations as MCP tools for AI agents."""
+"""MCP server — exposes spec operations as MCP tools for AI agents."""

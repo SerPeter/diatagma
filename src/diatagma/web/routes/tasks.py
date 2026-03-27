@@ -1,6 +1,6 @@
-"""Task CRUD routes — HTML views for create, read, update, delete.
+"""Spec CRUD endpoints — create, read, update, delete, move.
 
-Serves full-page HTML for initial load and HTMX partials for
-in-page updates. Forms post to these endpoints and redirect or
-swap content via HTMX.
+RESTful JSON API for individual spec operations. Supports partial
+updates (PATCH), bulk operations, and spec lifecycle transitions
+(move to backlog, archive).
 """

@@ -1,1 +1,1 @@
-"""Tests for web routes — FastAPI TestClient integration tests."""
+"""Tests for web routes — Litestar TestClient integration tests."""

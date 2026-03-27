@@ -1,1 +1,1 @@
-"""Tests for core.store — TaskStore CRUD operations over filesystem."""
+"""Tests for core.store — SpecStore CRUD operations over filesystem."""
