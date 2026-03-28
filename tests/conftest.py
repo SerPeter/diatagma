@@ -14,7 +14,9 @@ from datetime import date
 
 import pytest
 
-from diatagma.core.models import Spec, SpecBody, SpecMeta
+from diatagma.core.models import PrefixDef, Spec, SpecBody, SpecMeta
+from diatagma.core.parser import write_spec_file
+from diatagma.core.store import SpecStore
 
 
 @pytest.fixture
@@ -198,3 +200,116 @@ def minimal_spec_text() -> str:
 def spec_with_extras_text() -> str:
     """Includes unknown sections that should go to extra_sections."""
     return SPEC_WITH_EXTRAS_TEXT
+
+
+# ---------------------------------------------------------------------------
+# Store fixtures
+# ---------------------------------------------------------------------------
+
+STORY_TEMPLATE = """\
+## Description
+
+<!-- One-line summary -->
+
+## Context
+
+<!-- Why this story exists -->
+
+## Behavior
+
+### Scenario: [name]
+
+- **Given** [precondition]
+- **When** [action]
+- **Then** [expected outcome]
+"""
+
+EPIC_TEMPLATE = """\
+## Vision
+
+<!-- End state from the user's perspective -->
+
+## Context
+
+<!-- Strategic goal -->
+
+## Stories
+
+- [ ] ...
+"""
+
+SPIKE_TEMPLATE = """\
+## Description
+
+<!-- Research question -->
+
+## Research Questions
+
+1. ...
+
+## Findings
+
+## Recommendation
+"""
+
+
+@pytest.fixture
+def sample_prefixes() -> dict[str, PrefixDef]:
+    """Prefix definitions for store tests."""
+    return {
+        "DIA": PrefixDef(description="Diatagma core", template="story"),
+        "EX": PrefixDef(description="Exploration", template="spike"),
+    }
+
+
+@pytest.fixture
+def sample_templates() -> dict[str, str]:
+    """Template content keyed by template name."""
+    return {
+        "story": STORY_TEMPLATE,
+        "epic": EPIC_TEMPLATE,
+        "spike": SPIKE_TEMPLATE,
+    }
+
+
+@pytest.fixture
+def spec_store(tmp_tasks_dir, sample_prefixes, sample_templates) -> SpecStore:
+    """A SpecStore pointed at a temporary .tasks/ directory."""
+    return SpecStore(
+        tasks_dir=tmp_tasks_dir,
+        prefixes=sample_prefixes,
+        templates=sample_templates,
+    )
+
+
+def seed_spec_file(
+    tasks_dir,
+    spec_id: str,
+    title: str,
+    spec_type: str = "feature",
+    status: str = "pending",
+    **extra_meta,
+) -> None:
+    """Write a minimal spec file into a directory for testing."""
+    ext_map = {"epic": ".epic.md", "spike": ".spike.md"}
+    ext = ext_map.get(spec_type, ".story.md")
+    slug = title.lower().replace(" ", "-")[:40]
+    filename = f"{spec_id}-{slug}{ext}"
+    path = tasks_dir / filename
+
+    meta = SpecMeta.model_validate(
+        {
+            "id": spec_id,
+            "title": title,
+            "type": spec_type,
+            "status": status,
+            "created": date(2026, 3, 27),
+            **extra_meta,
+        }
+    )
+    spec = Spec(
+        meta=meta,
+        body=SpecBody(description=f"Description for {spec_id}."),
+        file_path=path,
+    )
+    write_spec_file(spec, path)
