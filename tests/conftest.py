@@ -10,12 +10,14 @@ Provides:
     spec_store         — a SpecStore pointed at tmp_tasks_dir
 """
 
+from collections.abc import Generator
 from datetime import date
 
 import pytest
 
-from diatagma.core.models import PrefixDef, Spec, SpecBody, SpecMeta
+from diatagma.core.models import PrefixDef, PriorityConfig, Spec, SpecBody, SpecMeta
 from diatagma.core.parser import write_spec_file
+from diatagma.core.cache import SpecCache
 from diatagma.core.store import SpecStore
 
 
@@ -313,3 +315,28 @@ def seed_spec_file(
         file_path=path,
     )
     write_spec_file(spec, path)
+
+
+# ---------------------------------------------------------------------------
+# Cache fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def spec_cache(tmp_tasks_dir) -> Generator[SpecCache]:
+    """A SpecCache pointed at the tmp .cache/ directory."""
+    cache_dir = tmp_tasks_dir / ".cache"
+    cache = SpecCache(cache_dir)
+    yield cache
+    cache.close()
+
+
+# ---------------------------------------------------------------------------
+# Priority fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def priority_config() -> PriorityConfig:
+    """Default priority scoring configuration."""
+    return PriorityConfig()
