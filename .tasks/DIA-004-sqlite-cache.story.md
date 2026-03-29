@@ -1,7 +1,7 @@
 ---
 id: DIA-004
 title: "Implement SQLite read cache with mtime invalidation"
-status: pending
+status: done
 type: feature
 tags: [core, cache, performance]
 business_value: 300

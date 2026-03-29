@@ -28,10 +28,10 @@ field_types:
     max_length: 120
   status:
     type: enum
-    values: [pending, in-progress, in-review, done, cancelled]
+    values: [pending, blocked, in-progress, in-review, done, cancelled]
   type:
     type: enum
-    values: [epic, feature, bug, spike, chore, docs]
+    values: [story, epic, spike, bug]
   business_value:
     type: integer
     min: -1000
@@ -49,6 +49,17 @@ field_types:
   blocked_by:
     type: list
     item_type: string
+    pattern: "^[A-Z]{1,5}-\\d{3,}$"
+  relates_to:
+    type: list
+    item_type: string
+    pattern: "^[A-Z]{1,5}-\\d{3,}$"
+  supersedes:
+    type: list
+    item_type: string
+    pattern: "^[A-Z]{1,5}-\\d{3,}$"
+  discovered_from:
+    type: string
     pattern: "^[A-Z]{1,5}-\\d{3,}$"
   assignee:
     type: string

@@ -1,36 +1,42 @@
 ---
 id: DIA-012
-title: "Epic: MCP server — AI agent task interface"
+title: "Epic: Agent & CLI interfaces — MCP server, CLI, coordination"
 status: pending
 type: epic
-tags: [mcp, epic]
+tags: [mcp, cli, agents, epic]
 business_value: 700
-story_points: 13
+story_points: 24
 dependencies: [DIA-011]
 assignee: ""
 created: 2026-03-27
+updated: 2026-03-29
 ---
 
-## Description
+## Vision
 
-Build the FastMCP 3.x server that exposes task operations as typed MCP tools for AI agents.
+AI agents and developers can discover, claim, and work on specs through MCP tools, CLI commands, or both — with safe multi-agent coordination.
 
 ## Context
 
-This is the primary interface for AI agents to discover, claim, and work on tasks. Tool schemas must be self-documenting to minimize hallucination. The server is a thin wrapper — all logic lives in core.
+Three interfaces share the same core: MCP server for AI agents, CLI for developers and scripting, and the coordination layer that prevents concurrent conflicts. All are thin wrappers — no business logic outside core.
 
-## Requirements
+## Stories
 
-- [ ] FastMCP server with stdio and SSE transport (DIA-009)
-- [ ] Full tool suite: create, get, update, list, get_next, search, claim, release, graph, validate
-- [ ] Agent ID tracking for changelog attribution
-- [ ] Claim/release with configurable timeout
+- [ ] DIA-009: FastMCP server with tools, resources, and prompts
+- [ ] DIA-016: Multi-agent coordination (claim/lock semantics)
+- [ ] DIA-017: AGENTS.md generation
+- [ ] DIA-020: CLI interface
 
-## Acceptance Criteria
+## Verification
 
-- [ ] All MCP tools callable and return valid typed responses
-- [ ] `get_next_task` respects dependency DAG and priority scoring
-- [ ] Agent can complete a full workflow: discover → claim → work → update → complete
-- [ ] Tool schemas render correctly in MCP client introspection
+- [ ] All child stories are done
+- [ ] MCP: agent can complete full workflow (discover -> claim -> work -> update -> complete)
+- [ ] CLI: `diatagma ready` and `diatagma validate` work end-to-end
+- [ ] Multi-agent: two agents can work concurrently without data corruption
+- [ ] AGENTS.md generated and parseable by AI agents
+- [ ] MCP tool schemas total under 5,000 tokens
+- [ ] CLI and MCP produce identical results for the same queries (same core functions)
 
-## Implementation Details
+## References
+
+- [ADR-001: FastMCP over official SDK](docs/adr/001-use-fastmcp-over-official-sdk.md)

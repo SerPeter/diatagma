@@ -1,7 +1,7 @@
 ---
 id: DIA-006
 title: "Implement WSJF priority scoring and task ranking"
-status: pending
+status: done
 type: feature
 tags: [core, priority]
 business_value: 300

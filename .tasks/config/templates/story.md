@@ -1,3 +1,19 @@
+---
+id: ""
+title: ""
+status: pending
+type: feature
+tags: [refine]
+business_value: 0
+story_points: 1
+parent: ""
+dependencies: []
+blocked_by: []
+relates_to: []
+assignee: ""
+created: ""
+---
+
 ## Description
 
 <!-- One-line summary of what the user/agent experiences when this is done -->
@@ -33,6 +49,8 @@
 ## References
 
 <!-- Links to ADRs, research docs, related specs, or external resources -->
+
+---
 
 ## Implementation Notes
 

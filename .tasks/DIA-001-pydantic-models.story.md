@@ -1,7 +1,7 @@
 ---
 id: DIA-001
 title: "Define Pydantic models for task metadata and configuration"
-status: pending
+status: done
 type: feature
 tags: [core, models]
 business_value: 500

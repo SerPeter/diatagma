@@ -1,7 +1,7 @@
 ---
 id: DIA-005
 title: "Build networkx dependency DAG with blocking semantics"
-status: pending
+status: done
 type: feature
 tags: [core, graph, dependencies]
 business_value: 400

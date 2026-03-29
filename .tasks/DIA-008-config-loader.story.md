@@ -1,7 +1,7 @@
 ---
 id: DIA-008
 title: "Implement configuration loader from .tasks/config/"
-status: pending
+status: done
 type: feature
 tags: [core, config]
 business_value: 400

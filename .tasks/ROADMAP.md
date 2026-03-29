@@ -1,11 +1,12 @@
 # Roadmap
 
-## Phase 1: Core Library (DIA-011)
+## Phase 1: Core Library (DIA-011) — In Progress
 
-**Goal**: A working core that can parse, store, query, and rank spec files.
+**Goal**: A working core that can parse, store, query, rank, and coordinate spec files.
 
-Foundation for everything else. No UI, no MCP — just the shared library that both will depend on. Testable via unit tests and CLI.
+Foundation for everything else. No UI, no MCP — just the shared library that all interfaces depend on. Testable via unit tests and CLI.
 
+**Done:**
 - DIA-001: Pydantic models
 - DIA-002: Frontmatter parser
 - DIA-003: SpecStore CRUD
@@ -15,27 +16,37 @@ Foundation for everything else. No UI, no MCP — just the shared library that b
 - DIA-007: Changelog
 - DIA-008: Config loader
 
-**Milestone**: `diatagma validate` works, all core tests pass.
+**Remaining:**
+- DIA-014: Typed dependency relationships (blocks, relates_to, supersedes, discovered_from)
+- DIA-015: "Get ready specs" deterministic query
+- DIA-018: File watcher for live change detection
+- DIA-019: Archive with context summaries
+- DIA-021: Lifecycle automation (auto-complete parents, completion metadata, sprint archival)
 
-## Phase 2: MCP Server (DIA-012)
+**Milestone**: `diatagma validate` works, `get_ready_specs()` returns priority-ranked actionable specs, all core tests pass.
 
-**Goal**: AI agents can discover, claim, and work on specs via MCP tools.
+## Phase 2: Agent & CLI Interfaces (DIA-012)
 
-Thin wrapper over core. Focus on ergonomic tool schemas that minimize agent hallucination. Agents should be able to complete a full workflow: discover → claim → work → update → complete.
+**Goal**: AI agents and developers can discover, claim, and work on specs via MCP tools or CLI commands, with safe multi-agent coordination.
 
-- DIA-009: FastMCP server with full tool suite
+All interfaces are thin wrappers over core. Focus on ergonomic tool/command schemas that minimize token overhead and agent hallucination.
 
-**Milestone**: An AI agent can run `get_next_story()`, claim it, and update its status.
+- DIA-020: CLI interface (simplest entry point — no server required)
+- DIA-009: FastMCP server with tools, resources, and prompts
+- DIA-016: Multi-agent coordination (claim/lock semantics)
+- DIA-017: AGENTS.md auto-generation
+
+**Milestone**: `diatagma ready` works from CLI. An AI agent can call `get_ready_specs()` via MCP, claim a spec, and update its status. Two agents can work concurrently without corruption.
 
 ## Phase 3: Web Dashboard (DIA-013)
 
 **Goal**: Humans can manage specs through a browser-based dashboard.
 
-React frontend consuming the Litestar JSON API. Start with the essentials (list view, detail view, basic kanban), then add rich views.
+Litestar JSON API backend + React/Vite frontend. Keyboard-first UX, sub-100ms response times via SQLite cache.
 
-- DIA-010: Litestar API + React dashboard
+- DIA-010: Litestar API + React dashboard (kanban, list, detail, graph views)
 
-**Milestone**: Kanban board works, specs editable in browser, changes reflected in markdown files.
+**Milestone**: Kanban board works, specs editable in browser, changes reflected in markdown files. All primary workflows completable via keyboard.
 
 ## Phase 4: Polish & Integration
 
@@ -43,13 +54,12 @@ React frontend consuming the Litestar JSON API. Start with the essentials (list 
 
 - Sprint management and velocity tracking
 - Dependency graph visualization (React Flow)
-- File watcher for live updates
 - `diatagma init` scaffolding command
 - Package publication (PyPI + npm)
 
 ## Future
 
 - Multi-project support (multiple .tasks/ roots)
-- GitHub/Linear integration (sync specs ↔ issues)
+- GitHub/Linear integration (sync specs <-> issues)
 - Collaborative editing (WebSocket live cursors)
 - AI-powered spec writing assistant (suggest behavior scenarios)

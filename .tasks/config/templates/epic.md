@@ -1,3 +1,18 @@
+---
+id: ""
+title: ""
+status: pending
+type: epic
+tags: [refine]
+business_value: 0
+story_points: 0
+dependencies: []
+blocked_by: []
+relates_to: []
+assignee: ""
+created: ""
+---
+
 ## Vision
 
 <!-- What does the world look like when this epic is done?

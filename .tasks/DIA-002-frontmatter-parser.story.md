@@ -1,7 +1,7 @@
 ---
 id: DIA-002
 title: "Implement markdown+YAML frontmatter parser"
-status: pending
+status: done
 type: feature
 tags: [core, parser]
 business_value: 500

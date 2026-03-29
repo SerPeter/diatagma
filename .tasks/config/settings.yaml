@@ -8,19 +8,18 @@ default_assignee: ""
 # Statuses available for tasks (order matters for kanban columns)
 statuses:
   - pending
+  - blocked
   - in-progress
   - in-review
   - done
   - cancelled
 
-# Task types
+# Spec types (each has a corresponding template and file extension)
 types:
-  - epic
-  - feature
-  - bug
-  - spike
-  - chore
-  - docs
+  - story     # .story.md — unit of deliverable work
+  - epic      # .epic.md  — groups related stories
+  - spike     # .spike.md — research producing ADRs/docs
+  - bug       # .bug.md   — defect report with reproduction steps
 
 # Story point scale (Fibonacci)
 story_point_scale: [1, 2, 3, 5, 8, 13, 21]
@@ -31,8 +30,11 @@ business_value_range: [-1000, 1000]
 # Agent claim timeout in minutes (auto-release if agent doesn't heartbeat)
 claim_timeout_minutes: 30
 
+# Auto-complete parent when all children are done
+auto_complete_parent: true
+
 # Web dashboard port
 web_port: 8742
 
-# MCP transport: "stdio" or "sse"
+# MCP transport: "stdio" or "streamable-http"
 mcp_transport: "stdio"

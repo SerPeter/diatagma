@@ -1,3 +1,19 @@
+---
+id: ""
+title: ""
+status: pending
+type: spike
+tags: [refine]
+business_value: 0
+story_points: 1
+parent: ""
+dependencies: []
+blocked_by: []
+relates_to: []
+assignee: ""
+created: ""
+---
+
 ## Description
 
 <!-- One-line summary of the research question or exploration -->
@@ -27,7 +43,14 @@
 - [ ] Research doc at `docs/research/YYMMDD_slug.md` — for detailed findings
 - [ ] Updated `docs/architecture.md` — if architecture is affected
 
+---
+
 ## Recommendation
 
 <!-- Summary conclusion and proposed next steps based on findings.
      Should be actionable — "do X" not "maybe consider X". -->
+
+## Implementation Notes
+
+<!-- Filled during research. Append decisions, dead ends, and
+     references as work progresses. -->

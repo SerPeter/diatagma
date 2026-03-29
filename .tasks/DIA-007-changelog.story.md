@@ -1,7 +1,7 @@
 ---
 id: DIA-007
 title: "Implement append-only changelog tracking"
-status: pending
+status: done
 type: feature
 tags: [core, changelog, audit]
 business_value: 200

@@ -1,7 +1,7 @@
 ---
 id: DIA-003
 title: "Implement TaskStore CRUD over filesystem"
-status: pending
+status: done
 type: feature
 tags: [core, store]
 business_value: 500
