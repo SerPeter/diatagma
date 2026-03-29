@@ -81,3 +81,5 @@ The most praised feature across agent task management tools is a deterministic "
 - [docs/architecture.md](docs/architecture.md) — query flow section
 
 ## Implementation Notes
+
+Renamed from `get_ready_specs()` to `get_next()` in `core/next.py`. Takes a flat `specs` list + built `SpecGraph` instead of `SpecStore` directly. Accepts `n` parameter for limiting results (e.g. `get_next(specs, graph, n=5)`). Non-empty `assignee` is treated as "claimed" and excluded by default (`include_claimed=True` to override). Epics are always excluded. Circular dependency participants are excluded with a loguru warning.

@@ -493,6 +493,10 @@ class SpecStore:
             if spec.meta.assignee != f.assignee:
                 return False
 
+        if f.sprint is not None:
+            if spec.meta.sprint != f.sprint:
+                return False
+
         if f.search is not None:
             if f.search.lower() not in spec.meta.title.lower():
                 return False

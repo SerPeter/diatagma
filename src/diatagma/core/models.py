@@ -277,6 +277,7 @@ class SpecFilter(BaseModel):
     prefix: str | None = None
     parent: str | None = None
     assignee: str | None = None
+    sprint: str | None = None
     search: str | None = None
 
     model_config = ConfigDict(frozen=True)
