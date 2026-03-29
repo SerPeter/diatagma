@@ -7,11 +7,11 @@ tags: [core, lifecycle, agents]
 business_value: 400
 story_points: 5
 parent: DIA-011
-dependencies: [DIA-003, DIA-005, DIA-006, DIA-007, DIA-015]
-blocked_by: []
-relates_to: [DIA-019]
 assignee: ""
 created: 2026-03-29
+links:
+  blocked_by: [DIA-003, DIA-005, DIA-006, DIA-007, DIA-015]
+  relates_to: [DIA-019]
 ---
 
 ## Description

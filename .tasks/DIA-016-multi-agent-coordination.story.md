@@ -7,9 +7,10 @@ tags: [core, agents, concurrency]
 business_value: 400
 story_points: 8
 parent: DIA-012
-dependencies: [DIA-003, DIA-015]
 assignee: ""
 created: 2026-03-29
+links:
+  blocked_by: [DIA-003, DIA-015]
 ---
 
 ## Description

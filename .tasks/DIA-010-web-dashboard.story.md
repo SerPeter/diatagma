@@ -7,11 +7,11 @@ tags: [web, dashboard, ui]
 business_value: 400
 story_points: 13
 parent: DIA-013
-dependencies: [DIA-003, DIA-005, DIA-008, DIA-014, DIA-015]
-blocked_by: [DIA-022]
 assignee: ""
 created: 2026-03-27
 updated: 2026-03-29
+links:
+  blocked_by: [DIA-003, DIA-005, DIA-008, DIA-014, DIA-015, DIA-022]
 ---
 
 ## Description

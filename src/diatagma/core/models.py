@@ -52,6 +52,22 @@ DEFAULT_TYPES = ("epic", "feature", "bug", "spike", "chore", "docs")
 SpecId = Annotated[str, Field(pattern=SPEC_ID_PATTERN)]
 """A spec identifier matching the PREFIX-NNN pattern."""
 
+
+class SpecLinks(BaseModel):
+    """Typed relationships between specs.
+
+    Declared on the affected spec only — inverse lookups are computed
+    by the graph at query time.
+    """
+
+    blocked_by: list[SpecId] = Field(default_factory=list)
+    relates_to: list[SpecId] = Field(default_factory=list)
+    supersedes: list[SpecId] = Field(default_factory=list)
+    discovered_from: SpecId | None = None
+
+    model_config = ConfigDict(frozen=True)
+
+
 # ---------------------------------------------------------------------------
 # Spec data models
 # ---------------------------------------------------------------------------
@@ -70,9 +86,7 @@ class SpecMeta(BaseModel):
     sprint: str | None = None
     assignee: str | None = None
     due_date: date | None = None
-    dependencies: list[SpecId] = Field(default_factory=list)
-    blocked_by: list[SpecId] = Field(default_factory=list)
-    related_to: list[SpecId] = Field(default_factory=list)
+    links: SpecLinks = Field(default_factory=SpecLinks)
     parent: SpecId | None = None
     created: date
     updated: date | None = None
@@ -302,6 +316,7 @@ __all__ = [
     "SpecBody",
     "SpecFilter",
     "SpecId",
+    "SpecLinks",
     "SpecMeta",
     "Sprint",
 ]

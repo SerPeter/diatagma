@@ -7,9 +7,10 @@ tags: [core, parser]
 business_value: 500
 story_points: 5
 parent: DIA-011
-dependencies: [DIA-001]
 assignee: ""
 created: 2026-03-27
+links:
+  blocked_by: [DIA-001]
 ---
 
 ## Description

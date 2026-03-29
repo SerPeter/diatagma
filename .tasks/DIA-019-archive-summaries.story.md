@@ -7,9 +7,10 @@ tags: [core, archive, agents]
 business_value: 200
 story_points: 3
 parent: DIA-011
-dependencies: [DIA-003, DIA-007]
 assignee: ""
 created: 2026-03-29
+links:
+  blocked_by: [DIA-003, DIA-007]
 ---
 
 ## Description

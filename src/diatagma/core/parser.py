@@ -137,9 +137,18 @@ def _meta_to_dict(meta: SpecMeta) -> dict[str, Any]:
     for key, value in raw.items():
         if value is None:
             continue
-        # Skip empty lists/dicts
-        if isinstance(value, (list, dict)) and not value:
+        if isinstance(value, list) and not value:
             continue
+        # Clean nested sub-model dicts (e.g. links): drop None/empty values
+        if isinstance(value, dict):
+            cleaned = {
+                k: v
+                for k, v in value.items()
+                if v is not None and not (isinstance(v, list) and not v)
+            }
+            if not cleaned:
+                continue
+            value = cleaned
         result[key] = value
     return result
 

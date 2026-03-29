@@ -7,7 +7,6 @@ tags: [core, models]
 business_value: 500
 story_points: 5
 parent: DIA-011
-dependencies: []
 assignee: ""
 created: 2026-03-27
 ---

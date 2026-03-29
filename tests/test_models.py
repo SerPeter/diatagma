@@ -20,6 +20,7 @@ from diatagma.core.models import (
     Settings,
     Spec,
     SpecBody,
+    SpecLinks,
     SpecMeta,
     Sprint,
 )
@@ -58,9 +59,7 @@ class TestSpecMeta:
         assert m.tags == []
         assert m.business_value is None
         assert m.story_points is None
-        assert m.dependencies == []
-        assert m.blocked_by == []
-        assert m.related_to == []
+        assert m.links == SpecLinks()
         assert m.parent is None
         assert m.updated is None
 
@@ -76,9 +75,10 @@ class TestSpecMeta:
             sprint="Sprint 1",
             assignee="alice",
             due_date=date(2026, 4, 15),
-            dependencies=["CORE-001", "CORE-002"],
-            blocked_by=["CORE-010"],
-            related_to=["EX-005"],
+            links=SpecLinks(
+                blocked_by=["CORE-001", "CORE-002", "CORE-010"],
+                relates_to=["EX-005"],
+            ),
             parent="CORE-040",
             created=date(2026, 3, 27),
             updated=date(2026, 3, 28),
@@ -86,7 +86,8 @@ class TestSpecMeta:
         assert m.tags == ["backend", "urgent"]
         assert m.business_value == 500
         assert m.story_points == 8
-        assert m.dependencies == ["CORE-001", "CORE-002"]
+        assert m.links.blocked_by == ["CORE-001", "CORE-002", "CORE-010"]
+        assert m.links.relates_to == ["EX-005"]
         assert m.parent == "CORE-040"
 
     # --- ID validation ---
@@ -159,23 +160,32 @@ class TestSpecMeta:
         with pytest.raises(ValidationError):
             _meta(story_points=sp)
 
-    # --- Dependency list validation ---
+    # --- Links validation ---
 
-    def test_valid_dependency_ids(self):
-        m = _meta(dependencies=["AB-001", "CDE-999"])
-        assert m.dependencies == ["AB-001", "CDE-999"]
-
-    def test_invalid_dependency_id(self):
-        with pytest.raises(ValidationError):
-            _meta(dependencies=["not-an-id"])
+    def test_valid_links(self):
+        m = _meta(links={"blocked_by": ["AB-001", "CDE-999"], "relates_to": ["EX-005"]})
+        assert m.links.blocked_by == ["AB-001", "CDE-999"]
+        assert m.links.relates_to == ["EX-005"]
 
     def test_invalid_blocked_by_id(self):
         with pytest.raises(ValidationError):
-            _meta(blocked_by=["lowercase-001"])
+            _meta(links={"blocked_by": ["not-an-id"]})
 
-    def test_invalid_related_to_id(self):
+    def test_invalid_relates_to_id(self):
         with pytest.raises(ValidationError):
-            _meta(related_to=[""])
+            _meta(links={"relates_to": [""]})
+
+    def test_invalid_supersedes_id(self):
+        with pytest.raises(ValidationError):
+            _meta(links={"supersedes": ["lowercase-001"]})
+
+    def test_valid_discovered_from(self):
+        m = _meta(links={"discovered_from": "DIA-011"})
+        assert m.links.discovered_from == "DIA-011"
+
+    def test_invalid_discovered_from(self):
+        with pytest.raises(ValidationError):
+            _meta(links={"discovered_from": "bad"})
 
     # --- Parent validation ---
 

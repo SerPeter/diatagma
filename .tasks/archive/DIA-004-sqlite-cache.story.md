@@ -7,9 +7,10 @@ tags: [core, cache, performance]
 business_value: 300
 story_points: 5
 parent: DIA-011
-dependencies: [DIA-001, DIA-003]
 assignee: ""
 created: 2026-03-27
+links:
+  blocked_by: [DIA-001, DIA-003]
 ---
 
 ## Description

@@ -154,17 +154,17 @@ class TestPutAndGet:
             "DIA-001",
             "Lists",
             tags=["core", "models"],
-            dependencies=["DIA-002"],
-            blocked_by=["DIA-003"],
-            related_to=["DIA-004"],
+            links={
+                "blocked_by": ["DIA-002"],
+                "relates_to": ["DIA-003"],
+            },
         )
         spec_cache.put(spec)
         result = spec_cache.get("DIA-001")
         assert result is not None
         assert result.meta.tags == ["core", "models"]
-        assert result.meta.dependencies == ["DIA-002"]
-        assert result.meta.blocked_by == ["DIA-003"]
-        assert result.meta.related_to == ["DIA-004"]
+        assert result.meta.links.blocked_by == ["DIA-002"]
+        assert result.meta.links.relates_to == ["DIA-003"]
 
     def test_date_fields_roundtrip(
         self, spec_cache: SpecCache, tmp_tasks_dir: Path

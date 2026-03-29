@@ -7,9 +7,10 @@ tags: [core, graph, dependencies]
 business_value: 400
 story_points: 5
 parent: DIA-011
-dependencies: [DIA-005]
 assignee: ""
 created: 2026-03-29
+links:
+  blocked_by: [DIA-005]
 ---
 
 ## Description

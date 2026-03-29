@@ -7,9 +7,10 @@ tags: [core, watch, performance]
 business_value: 300
 story_points: 5
 parent: DIA-011
-dependencies: [DIA-003, DIA-004]
 assignee: ""
 created: 2026-03-29
+links:
+  blocked_by: [DIA-003, DIA-004]
 ---
 
 ## Description

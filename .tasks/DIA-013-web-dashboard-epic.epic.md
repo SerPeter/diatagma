@@ -6,10 +6,11 @@ type: epic
 tags: [web, epic]
 business_value: 600
 story_points: 21
-dependencies: [DIA-011, DIA-020]
 assignee: ""
 created: 2026-03-27
 updated: 2026-03-29
+links:
+  blocked_by: [DIA-011, DIA-020]
 ---
 
 ## Vision

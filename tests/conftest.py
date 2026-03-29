@@ -45,7 +45,6 @@ def sample_meta_dict() -> dict:
         "business_value": 500,
         "story_points": 5,
         "parent": "DIA-011",
-        "dependencies": [],
         "created": date(2026, 3, 27),
     }
 

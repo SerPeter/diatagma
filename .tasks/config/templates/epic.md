@@ -6,9 +6,6 @@ type: epic
 tags: [refine]
 business_value: 0
 story_points: 0
-dependencies: []
-blocked_by: []
-relates_to: []
 assignee: ""
 created: ""
 ---

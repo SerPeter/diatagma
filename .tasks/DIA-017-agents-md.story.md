@@ -7,10 +7,11 @@ tags: [cli, agents, dx]
 business_value: 300
 story_points: 5
 parent: DIA-012
-dependencies: [DIA-008, DIA-015, DIA-020]
 assignee: ""
 created: 2026-03-29
 updated: 2026-03-29
+links:
+  blocked_by: [DIA-008, DIA-015, DIA-020]
 ---
 
 ## Description

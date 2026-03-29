@@ -7,9 +7,10 @@ tags: [cli, dx]
 business_value: 500
 story_points: 5
 parent: DIA-012
-dependencies: [DIA-003, DIA-005, DIA-006, DIA-008, DIA-015]
 assignee: ""
 created: 2026-03-29
+links:
+  blocked_by: [DIA-003, DIA-005, DIA-006, DIA-008, DIA-015]
 ---
 
 ## Description

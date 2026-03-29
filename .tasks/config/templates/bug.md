@@ -7,9 +7,6 @@ tags: [refine]
 business_value: 0
 story_points: 1
 parent: ""
-dependencies: []
-blocked_by: []
-relates_to: []
 assignee: ""
 created: ""
 ---

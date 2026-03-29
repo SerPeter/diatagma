@@ -6,7 +6,6 @@ type: epic
 tags: [core, epic]
 business_value: 800
 story_points: 21
-dependencies: []
 assignee: ""
 created: 2026-03-27
 updated: 2026-03-29

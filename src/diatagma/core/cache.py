@@ -33,7 +33,7 @@ from diatagma.core.models import SortField, Spec, SpecBody, SpecFilter, SpecMeta
 # Constants
 # ---------------------------------------------------------------------------
 
-CACHE_VERSION = "1"
+CACHE_VERSION = "2"
 """Bump to force a full cache rebuild on schema changes."""
 
 _SCHEMA_SQL = """\
@@ -53,9 +53,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     sprint          TEXT,
     assignee        TEXT,
     due_date        TEXT,
-    dependencies    TEXT NOT NULL DEFAULT '[]',
-    blocked_by      TEXT NOT NULL DEFAULT '[]',
-    related_to      TEXT NOT NULL DEFAULT '[]',
+    links           TEXT NOT NULL DEFAULT '{}',
     parent          TEXT,
     created         TEXT NOT NULL,
     updated         TEXT,
@@ -81,7 +79,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts5(
 # Serialization helpers (module-level)
 # ---------------------------------------------------------------------------
 
-_LIST_FIELDS = frozenset({"tags", "dependencies", "blocked_by", "related_to"})
+_LIST_FIELDS = frozenset({"tags"})
 _DATE_FIELDS = frozenset({"created", "updated", "due_date"})
 
 
@@ -89,6 +87,8 @@ def _serialize_value(key: str, value: object) -> object:
     """Convert a Python value to a SQLite-compatible value."""
     if key in _LIST_FIELDS:
         return orjson.dumps(value).decode() if value else "[]"
+    if key == "links":
+        return orjson.dumps(value).decode() if value else "{}"
     if key in _DATE_FIELDS:
         return value.isoformat() if isinstance(value, date) else value
     if isinstance(value, Path):
@@ -270,9 +270,7 @@ class SpecCache:
             "sprint": row["sprint"],
             "assignee": row["assignee"],
             "due_date": _deserialize_date(row["due_date"]),
-            "dependencies": _deserialize_list(row["dependencies"]),
-            "blocked_by": _deserialize_list(row["blocked_by"]),
-            "related_to": _deserialize_list(row["related_to"]),
+            "links": orjson.loads(row["links"]),
             "parent": row["parent"],
             "created": _deserialize_date(row["created"]),
             "updated": _deserialize_date(row["updated"]),

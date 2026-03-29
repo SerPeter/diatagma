@@ -7,11 +7,10 @@ tags: [web, ux, design, refine]
 business_value: 400
 story_points: 5
 parent: DIA-013
-dependencies: []
-blocked_by: []
-relates_to: [DIA-010]
 assignee: ""
 created: 2026-03-29
+links:
+  relates_to: [DIA-010]
 ---
 
 ## Description
@@ -46,10 +45,10 @@ tags: [core, query]        # Freeform string tags
 business_value: 500        # -1000 to 1000
 story_points: 5            # 1, 2, 3, 5, 8, 13, 21
 parent: "DIA-011"          # Parent epic ID (optional)
-dependencies: []           # Legacy alias for blocked_by
-blocked_by: ["DIA-005"]    # Specs that must complete before this one
-relates_to: ["DIA-009"]    # Related specs (no blocking)
-supersedes: []             # Specs this one replaces
+links:
+  blocked_by: ["DIA-005"]    # Specs that must complete before this one
+  relates_to: ["DIA-009"]    # Related specs (no blocking)
+  supersedes: []             # Specs this one replaces
 assignee: "agent-a"        # Who is working on this
 sprint: "Sprint 1"         # Sprint assignment (optional)
 due_date: 2026-04-15       # Deadline (optional)
