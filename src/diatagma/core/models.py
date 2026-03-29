@@ -234,11 +234,26 @@ class HooksConfig(BaseModel):
     on_claim_timeout: list[HookEntry] = Field(default_factory=list)
 
 
+class ChangelogEntry(BaseModel):
+    """A single parsed changelog entry."""
+
+    model_config = ConfigDict(frozen=True)
+
+    date: date
+    spec_id: str
+    action: str
+    field: str | None = None
+    old: str | None = None
+    new: str | None = None
+    agent_id: str = "unknown"
+
+
 __all__ = [
     "DEFAULT_STATUSES",
     "DEFAULT_TYPES",
     "FIBONACCI_POINTS",
     "SPEC_ID_PATTERN",
+    "ChangelogEntry",
     "DueDateUrgency",
     "HookCondition",
     "HookEntry",
