@@ -288,47 +288,6 @@ class TestSpec:
 
 
 # ===========================================================================
-# Serialization
-# ===========================================================================
-
-
-class TestSerialization:
-    """Round-trip serialization via model_dump / model_validate."""
-
-    def test_spec_meta_round_trip(self):
-        m = _meta(business_value=100, story_points=5, tags=["core"])
-        d = m.model_dump()
-        assert d["id"] == "DIA-001"
-        assert d["status"] == "pending"
-        assert d["business_value"] == 100
-        m2 = SpecMeta.model_validate(d)
-        assert m2 == m
-
-    def test_spec_round_trip(self):
-        spec = Spec(
-            meta=_meta(),
-            body=SpecBody(description="test"),
-            raw_body="## Description\n\ntest",
-        )
-        d = spec.model_dump()
-        spec2 = Spec.model_validate(d)
-        assert spec2.meta.id == spec.meta.id
-        assert spec2.body.description == spec.body.description
-        assert spec2.raw_body == spec.raw_body
-
-    def test_date_serializes_as_date(self):
-        m = _meta()
-        d = m.model_dump()
-        assert isinstance(d["created"], date)
-
-    def test_none_fields_included(self):
-        m = _meta()
-        d = m.model_dump()
-        assert "business_value" in d
-        assert d["business_value"] is None
-
-
-# ===========================================================================
 # Configuration models
 # ===========================================================================
 

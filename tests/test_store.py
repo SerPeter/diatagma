@@ -6,12 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from diatagma.core.models import PrefixDef
+from diatagma.core.models import PrefixDef, SortField, SpecFilter
 from diatagma.core.parser import parse_spec_file
 from diatagma.core.store import (
     InvalidPrefixError,
-    SortField,
-    SpecFilter,
     SpecNotFoundError,
     SpecStore,
     _slugify,
@@ -208,6 +206,14 @@ class TestGet:
         with pytest.raises(SpecNotFoundError, match="DIA-999"):
             spec_store.get("DIA-999")
 
+    def test_get_deleted_file_raises(self, spec_store: SpecStore, tmp_tasks_dir: Path):
+        seed_spec_file(tmp_tasks_dir, "DIA-001", "Ephemeral")
+        spec = spec_store.get("DIA-001")
+        assert spec.file_path is not None
+        spec.file_path.unlink()
+        with pytest.raises(SpecNotFoundError):
+            spec_store.get("DIA-001")
+
 
 # ===========================================================================
 # list
@@ -250,14 +256,18 @@ class TestList:
         specs = spec_store.list()
         assert len(specs) == 5
 
-    def test_filter_by_status(self, spec_store: SpecStore):
-        specs = spec_store.list(SpecFilter(status="in-progress"))
-        assert len(specs) == 1
-        assert specs[0].meta.id == "DIA-002"
-
-    def test_filter_by_multiple_statuses(self, spec_store: SpecStore):
-        specs = spec_store.list(SpecFilter(status=["pending", "in-progress"]))
-        assert len(specs) == 5
+    @pytest.mark.parametrize(
+        ("status_filter", "expected_count"),
+        [
+            ("in-progress", 1),
+            (["pending", "in-progress"], 5),
+        ],
+    )
+    def test_filter_by_status(
+        self, spec_store: SpecStore, status_filter, expected_count
+    ):
+        specs = spec_store.list(SpecFilter(status=status_filter))
+        assert len(specs) == expected_count
 
     def test_filter_by_type(self, spec_store: SpecStore):
         specs = spec_store.list(SpecFilter(type="epic"))

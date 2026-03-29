@@ -29,15 +29,22 @@ import shutil
 import threading
 from collections import defaultdict
 from datetime import date
-from enum import Enum
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Protocol, runtime_checkable
 
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import ValidationError
 
-from diatagma.core.models import PrefixDef, Settings, Spec, SpecBody, SpecMeta
+from diatagma.core.models import (
+    PrefixDef,
+    Settings,
+    SortField,
+    Spec,
+    SpecBody,
+    SpecFilter,
+    SpecMeta,
+)
 from diatagma.core.parser import ParseError, parse_spec_file, write_spec_file
 
 # ---------------------------------------------------------------------------
@@ -58,33 +65,6 @@ _DEFAULT_EXT = ".story.md"
 # ---------------------------------------------------------------------------
 # Helper types
 # ---------------------------------------------------------------------------
-
-
-class SpecFilter(BaseModel):
-    """Filters for SpecStore.list(). All fields optional; None = no filter."""
-
-    status: str | list[str] | None = None
-    type: str | list[str] | None = None
-    tags: list[str] | None = None
-    prefix: str | None = None
-    parent: str | None = None
-    assignee: str | None = None
-    search: str | None = None
-
-    model_config = {"frozen": True}
-
-
-class SortField(str, Enum):
-    """Sort key for SpecStore.list()."""
-
-    ID = "id"
-    TITLE = "title"
-    STATUS = "status"
-    CREATED = "created"
-    UPDATED = "updated"
-    BUSINESS_VALUE = "business_value"
-    STORY_POINTS = "story_points"
-    PRIORITY = "priority"
 
 
 @runtime_checkable
@@ -258,7 +238,7 @@ class SpecStore:
         for path in self._scan_dirs():
             try:
                 specs.append(parse_spec_file(path))
-            except (ParseError, Exception) as exc:  # noqa: BLE001
+            except (ParseError, ValidationError, OSError) as exc:
                 logger.warning("skipping {}: {}", path.name, exc)
 
         if filters is not None:
@@ -393,7 +373,8 @@ class SpecStore:
                     current_meta["updated"] = date.today()
                     spec.meta = SpecMeta.model_validate(current_meta)
 
-            assert spec.file_path is not None
+            if spec.file_path is None:
+                raise StoreError(f"spec {spec_id} has no file_path")
             write_spec_file(spec, spec.file_path)
             return spec
 

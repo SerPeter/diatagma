@@ -261,7 +261,11 @@ class TestParseSpecFile:
 
     def test_real_spec_file(self):
         """Parse an actual spec file from the repo's .tasks/ directory."""
-        real = Path("D:/dev/git/diatagma/.tasks/DIA-001-pydantic-models.story.md")
+        real = (
+            Path(__file__).resolve().parent.parent
+            / ".tasks"
+            / "DIA-001-pydantic-models.story.md"
+        )
         if not real.exists():
             pytest.skip("Real spec file not available")
         spec = parse_spec_file(real)

@@ -27,8 +27,7 @@ from pathlib import Path
 import orjson
 from loguru import logger
 
-from diatagma.core.models import Spec, SpecBody, SpecMeta
-from diatagma.core.store import SortField, SpecFilter
+from diatagma.core.models import SortField, Spec, SpecBody, SpecFilter, SpecMeta
 
 # ---------------------------------------------------------------------------
 # Constants

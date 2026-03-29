@@ -465,7 +465,7 @@ class TestDiatagmaConfig:
 
     def test_loads_real_config(self) -> None:
         """Smoke test: load the actual .tasks/ config from this repo."""
-        tasks_dir = Path("D:/dev/git/diatagma/.tasks")
+        tasks_dir = Path(__file__).resolve().parent.parent / ".tasks"
         if not (tasks_dir / "config").exists():
             pytest.skip("repo .tasks/config not available")
 

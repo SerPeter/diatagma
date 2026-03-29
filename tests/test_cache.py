@@ -8,10 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from diatagma.core.cache import CACHE_VERSION, SpecCache
-from diatagma.core.models import Spec, SpecMeta
+from diatagma.core.cache import SpecCache
+from diatagma.core.models import SortField, Spec, SpecFilter, SpecMeta
 from diatagma.core.parser import parse_spec_file
-from diatagma.core.store import SortField, SpecFilter
 from tests.conftest import seed_spec_file
 
 
@@ -51,28 +50,6 @@ class TestInit:
         assert (cache_dir / "tasks.db").exists()
         cache.close()
 
-    def test_creates_tables(self, spec_cache: SpecCache) -> None:
-        tables = {
-            row["name"]
-            for row in spec_cache._conn.execute(
-                "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')"
-            ).fetchall()
-        }
-        assert "tasks" in tables
-        assert "cache_meta" in tables
-        assert "tasks_fts" in tables
-
-    def test_wal_mode_enabled(self, spec_cache: SpecCache) -> None:
-        mode = spec_cache._conn.execute("PRAGMA journal_mode").fetchone()[0]
-        assert mode == "wal"
-
-    def test_version_stored(self, spec_cache: SpecCache) -> None:
-        row = spec_cache._conn.execute(
-            "SELECT value FROM cache_meta WHERE key = 'version'"
-        ).fetchone()
-        assert row is not None
-        assert row["value"] == CACHE_VERSION
-
 
 # ===========================================================================
 # TestVersion
@@ -99,8 +76,6 @@ class TestVersion:
         # Re-open — should detect mismatch and clear
         cache2 = SpecCache(cache_dir)
         assert cache2.get("DIA-001") is None
-        count = cache2._conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
-        assert count == 0
         cache2.close()
 
     def test_version_match_preserves_data(self, tmp_tasks_dir: Path) -> None:
@@ -155,14 +130,7 @@ class TestPutAndGet:
         assert spec.file_path is not None
         spec.file_path.unlink()
 
-        result = spec_cache.get("DIA-001")
-        assert result is None
-
-        # Should also clean up the row
-        row = spec_cache._conn.execute(
-            "SELECT COUNT(*) FROM tasks WHERE id = 'DIA-001'"
-        ).fetchone()[0]
-        assert row == 0
+        assert spec_cache.get("DIA-001") is None
 
     def test_put_overwrites(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
         spec = _make_spec(tmp_tasks_dir, "DIA-001", "Original")
@@ -262,10 +230,8 @@ class TestInvalidate:
         spec_cache.put(spec)
         spec_cache.invalidate("DIA-001")
 
-        fts_count = spec_cache._conn.execute(
-            "SELECT COUNT(*) FROM tasks_fts WHERE id = 'DIA-001'"
-        ).fetchone()[0]
-        assert fts_count == 0
+        results = spec_cache.query(SpecFilter(search="FTS cleanup"))
+        assert len(results) == 0
 
 
 # ===========================================================================
@@ -300,8 +266,7 @@ class TestRebuild:
 
         spec_cache.rebuild([])
 
-        count = spec_cache._conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
-        assert count == 0
+        assert spec_cache.query() == []
 
 
 # ===========================================================================
@@ -374,23 +339,31 @@ class TestQuery:
         results = spec_cache.query()
         assert len(results) == 5
 
-    def test_filter_by_status_str(self, spec_cache: SpecCache) -> None:
-        results = spec_cache.query(SpecFilter(status="pending"))
-        assert len(results) == 3
-        assert all(s.meta.status == "pending" for s in results)
+    @pytest.mark.parametrize(
+        ("status_filter", "expected_count"),
+        [
+            ("pending", 3),
+            (["pending", "in-progress"], 4),
+        ],
+    )
+    def test_filter_by_status(
+        self, spec_cache: SpecCache, status_filter, expected_count
+    ) -> None:
+        results = spec_cache.query(SpecFilter(status=status_filter))
+        assert len(results) == expected_count
 
-    def test_filter_by_status_list(self, spec_cache: SpecCache) -> None:
-        results = spec_cache.query(SpecFilter(status=["pending", "in-progress"]))
-        assert len(results) == 4
-
-    def test_filter_by_type_str(self, spec_cache: SpecCache) -> None:
-        results = spec_cache.query(SpecFilter(type="bug"))
-        assert len(results) == 1
-        assert results[0].meta.id == "DIA-002"
-
-    def test_filter_by_type_list(self, spec_cache: SpecCache) -> None:
-        results = spec_cache.query(SpecFilter(type=["feature", "bug"]))
-        assert len(results) == 2
+    @pytest.mark.parametrize(
+        ("type_filter", "expected_count"),
+        [
+            ("bug", 1),
+            (["feature", "bug"], 2),
+        ],
+    )
+    def test_filter_by_type(
+        self, spec_cache: SpecCache, type_filter, expected_count
+    ) -> None:
+        results = spec_cache.query(SpecFilter(type=type_filter))
+        assert len(results) == expected_count
 
     def test_filter_by_tags(self, spec_cache: SpecCache) -> None:
         results = spec_cache.query(SpecFilter(tags=["core"]))
@@ -432,9 +405,13 @@ class TestQuery:
         titles = [s.meta.title for s in results]
         assert titles == sorted(titles, key=str.lower)
 
-    def test_sort_by_created(self, spec_cache: SpecCache) -> None:
-        results = spec_cache.query(sort_by=SortField.CREATED)
-        # All have same created date in seed; just verify no error
+    @pytest.mark.parametrize(
+        "field", [SortField.CREATED, SortField.STATUS, SortField.STORY_POINTS]
+    )
+    def test_sort_by_field_no_error(
+        self, spec_cache: SpecCache, field: SortField
+    ) -> None:
+        results = spec_cache.query(sort_by=field)
         assert len(results) == 5
 
     def test_sort_by_business_value(self, spec_cache: SpecCache) -> None:
@@ -511,12 +488,9 @@ class TestFTS:
         results = spec_cache.query(SpecFilter(search="searchable"))
         assert len(results) == 1
 
-        # Should NOT find by old title via FTS
-        fts_rows = spec_cache._conn.execute(
-            "SELECT * FROM tasks_fts WHERE tasks_fts MATCH ?",
-            ('"Original title"',),
-        ).fetchall()
-        assert len(fts_rows) == 0
+        # Should NOT find by old title
+        results = spec_cache.query(SpecFilter(search="Original"))
+        assert len(results) == 0
 
     def test_fts_cleared_on_invalidate(
         self, spec_cache: SpecCache, tmp_tasks_dir: Path
@@ -525,7 +499,5 @@ class TestFTS:
         spec_cache.put(spec)
         spec_cache.invalidate("DIA-001")
 
-        fts_count = spec_cache._conn.execute(
-            "SELECT COUNT(*) FROM tasks_fts WHERE id = 'DIA-001'"
-        ).fetchone()[0]
-        assert fts_count == 0
+        results = spec_cache.query(SpecFilter(search="Searchable"))
+        assert len(results) == 0

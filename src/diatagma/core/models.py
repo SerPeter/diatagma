@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from enum import Enum
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -248,6 +249,38 @@ class ChangelogEntry(BaseModel):
     agent_id: str = "unknown"
 
 
+# ---------------------------------------------------------------------------
+# Query / filter types (used by store and cache)
+# ---------------------------------------------------------------------------
+
+
+class SpecFilter(BaseModel):
+    """Filters for listing specs. All fields optional; None = no filter."""
+
+    status: str | list[str] | None = None
+    type: str | list[str] | None = None
+    tags: list[str] | None = None
+    prefix: str | None = None
+    parent: str | None = None
+    assignee: str | None = None
+    search: str | None = None
+
+    model_config = ConfigDict(frozen=True)
+
+
+class SortField(str, Enum):
+    """Sort key for listing specs."""
+
+    ID = "id"
+    TITLE = "title"
+    STATUS = "status"
+    CREATED = "created"
+    UPDATED = "updated"
+    BUSINESS_VALUE = "business_value"
+    STORY_POINTS = "story_points"
+    PRIORITY = "priority"
+
+
 __all__ = [
     "DEFAULT_STATUSES",
     "DEFAULT_TYPES",
@@ -264,8 +297,10 @@ __all__ = [
     "SchemaConfig",
     "SchemaFieldConstraint",
     "Settings",
+    "SortField",
     "Spec",
     "SpecBody",
+    "SpecFilter",
     "SpecId",
     "SpecMeta",
     "Sprint",
