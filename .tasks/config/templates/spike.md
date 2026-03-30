@@ -41,11 +41,17 @@ created: ""
 - [ ] Updated `docs/architecture.md` — if architecture is affected
 
 ---
+<!-- ═══ Fill during/after research ═══ -->
 
 ## Recommendation
 
 <!-- Summary conclusion and proposed next steps based on findings.
      Should be actionable — "do X" not "maybe consider X". -->
+
+## Implementation Summary
+
+<!-- Filled at completion. Concise digest of what was researched, key findings,
+     and outcomes — so future readers don't need to parse the full spec. -->
 
 ## Implementation Notes
 

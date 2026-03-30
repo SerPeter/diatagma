@@ -384,6 +384,11 @@ class SpecStore:
 
     def move_to_archive(self, spec_id: str, agent_id: str = "unknown") -> Spec:
         """Move a spec file to the archive/ directory."""
+        spec = self.get(spec_id)
+        if not spec.body.implementation_summary:
+            logger.warning(
+                "archiving {} without an ## Implementation Summary section", spec_id
+            )
         return self._move_spec(spec_id, self._archive_dir, "archive", agent_id)
 
     # --- ID generation -----------------------------------------------------

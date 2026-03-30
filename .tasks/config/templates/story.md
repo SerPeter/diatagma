@@ -48,6 +48,12 @@ created: ""
 <!-- Links to ADRs, research docs, related specs, or external resources -->
 
 ---
+<!-- ═══ Fill during/after implementation ═══ -->
+
+## Implementation Summary
+
+<!-- Filled at completion. Concise digest of what was built, key decisions,
+     and outcomes — so future readers don't need to parse the full spec. -->
 
 ## Implementation Notes
 

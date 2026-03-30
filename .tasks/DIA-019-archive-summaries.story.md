@@ -1,7 +1,7 @@
 ---
 id: DIA-019
 title: "Generate context summaries when archiving specs"
-status: pending
+status: done
 type: feature
 tags: [core, archive, agents]
 business_value: 200
@@ -78,4 +78,10 @@ The story template already includes an `## Implementation Notes` section where a
 
 - [docs/architecture.md](docs/architecture.md)
 
+## Implementation Summary
+
+Pivoted from auto-extracted summaries to agent-authored `## Implementation Summary` sections. Added `implementation_summary` field to `SpecBody` (positioned before `implementation_notes` for correct render order). `move_to_archive()` warns via loguru if summary is missing but does not block. Updated story, spike, and bug templates with the new section.
+
 ## Implementation Notes
+
+Renamed from `summary` to `implementation_summary` for clarity — the section captures implementation outcomes, not a generic summary. Epic template not updated (no implementation notes concept).

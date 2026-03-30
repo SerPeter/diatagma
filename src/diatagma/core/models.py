@@ -106,6 +106,7 @@ class SpecBody(BaseModel):
     constraints: str | None = None
     verification: str | None = None
     references: str | None = None
+    implementation_summary: str | None = None
     implementation_notes: str | None = None
 
     # Epic sections

@@ -59,6 +59,11 @@ created: ""
      Examples: add a test, tighten validation, improve error handling,
      add a lint rule, update documentation, refactor fragile code. -->
 
+## Implementation Summary
+
+<!-- Filled at completion. Concise digest of what was fixed, root cause,
+     and outcomes — so future readers don't need to parse the full spec. -->
+
 ## Implementation Notes
 
 <!-- Append decisions, trade-offs, and references as work progresses. -->
