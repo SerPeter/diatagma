@@ -100,3 +100,7 @@ This is how AI agents interact with diatagma. The design must learn from widespr
 - [MCP Prompts specification](https://modelcontextprotocol.io/specification/2025-06-18/server/prompts)
 
 ## Implementation Notes
+
+### Sync architecture (from DIA-018 analysis)
+
+MCP tool calls that mutate specs go through `SpecStore.update()` → file write → `SpecWatcher` detects → cache update. This is slightly redundant (store could update cache directly after writing), but correct. When cache is wired into SpecStore's write path (future), the watcher becomes a safety net for external-only changes and the watcher-triggered cache update becomes a no-op (mtime already matches). MCP reads should go through the cache for performance. `SpecWatcher` in `core/watcher.py` runs as a background thread — start it alongside the MCP server.

@@ -87,3 +87,7 @@ The dashboard is the human interface for spec management. Research into develope
 - [ADR-003: React + Vite frontend](docs/adr/003-react-vite-frontend.md)
 
 ## Implementation Notes
+
+### Sync architecture (from DIA-018 analysis)
+
+Dashboard write-back is NOT a feedback loop: Dashboard → API → `SpecStore.update()` → file write → watcher detects → cache update → WebSocket notifies dashboard. The notification is a confirmation, not a trigger — no write is initiated by the notification, so the cycle terminates. The dashboard should handle self-notifications idempotently (just refresh the view). Optional future optimization: tag mutations with an origin ID so the dashboard can suppress notifications about its own writes to avoid UI flicker. `SpecWatcher` in `core/watcher.py` provides `make_notify_callback()` — wire it to a WebSocket broadcast handler. The watcher delivers `list[SpecChangeEvent]` with `change_type`, `path`, and `spec_id`.

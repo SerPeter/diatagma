@@ -52,14 +52,7 @@ Litestar JSON API backend + React/Vite frontend. Keyboard-first UX, sub-100ms re
 
 **Goal**: Production-ready tool with smooth DX for both humans and agents.
 
-- Sprint management and velocity tracking
+- Sprint management
 - Dependency graph visualization (React Flow)
 - `diatagma init` scaffolding command
-- Package publication (PyPI + npm)
-
-## Future
-
-- Multi-project support (multiple .tasks/ roots)
-- GitHub/Linear integration (sync specs <-> issues)
-- Collaborative editing (WebSocket live cursors)
-- AI-powered spec writing assistant (suggest behavior scenarios)
+- Package publication (PyPI)

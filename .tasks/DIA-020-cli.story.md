@@ -117,3 +117,7 @@ A CLI is the lowest-friction entry point for developers: no server to start, no 
 - [rich documentation](https://rich.readthedocs.io/)
 
 ## Implementation Notes
+
+### Sync architecture (from DIA-018 analysis)
+
+CLI mutations go through `SpecStore.update()` → file write → `SpecWatcher` detects → cache update. Same redundant-but-correct path as MCP. CLI reads should go through the cache for performance. The watcher is optional for CLI (short-lived commands don't benefit from live watching), but if the CLI runs a long-lived mode (e.g., `diatagma watch` or a TUI), start `SpecWatcher` as a background thread to keep the cache fresh.

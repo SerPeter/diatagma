@@ -79,3 +79,5 @@ Both the MCP server and web dashboard need to reflect external file changes. Wit
 - [watchfiles documentation](https://watchfiles.helpmanual.io/)
 
 ## Implementation Notes
+
+Implemented as `SpecWatcher` in `core/watcher.py`. Uses `watchfiles.watch()` in a daemon thread with `stop_event` for clean shutdown. Built-in debounce at 500ms (configurable). `SpecFileFilter` subclasses `DefaultFilter` to pass only `.md` files, rejecting `.cache/`, `.tmp`, and inherited ignores (`.git`, etc.). Callbacks receive `list[SpecChangeEvent]` domain events (not raw watchfiles tuples) with `change_type`, `path`, and pre-extracted `spec_id`. Two factory functions: `make_cache_callback` (individual put/invalidate below threshold, full `cache.rebuild()` above) and `make_notify_callback` (pass-through for future WebSocket wiring). Context manager protocol supported. Watcher is self-contained — not yet wired into SpecStore or web layer.
