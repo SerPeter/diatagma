@@ -391,6 +391,20 @@ class SpecStore:
             )
         return self._move_spec(spec_id, self._archive_dir, "archive", agent_id)
 
+    def restore_from_archive(self, spec_id: str, agent_id: str = "unknown") -> Spec:
+        """Move a spec from archive/ back to the active tasks directory."""
+        return self._move_spec(
+            spec_id, self._tasks_dir, "restored from archive", agent_id
+        )
+
+    def is_archived(self, spec_id: str) -> bool:
+        """Check if a spec file resides in the archive directory."""
+        try:
+            path = self._find_spec_file(spec_id)
+            return self._archive_dir in path.parents
+        except SpecNotFoundError:
+            return False
+
     # --- ID generation -----------------------------------------------------
 
     def next_id(self, prefix: str) -> str:

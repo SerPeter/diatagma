@@ -98,6 +98,11 @@ class SpecGraph:
                     links.discovered_from, sid, edge_type=EdgeType.DISCOVERED_FROM
                 )
 
+    def update_node_status(self, spec_id: str, new_status: str) -> None:
+        """Update the status attribute of an existing node."""
+        if spec_id in self._graph:
+            self._graph.nodes[spec_id]["status"] = new_status
+
     # --- Blocking queries --------------------------------------------------
 
     def get_dependents(self, spec_id: str) -> list[str]:

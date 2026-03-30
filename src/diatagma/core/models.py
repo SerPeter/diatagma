@@ -203,6 +203,7 @@ class Settings(BaseModel):
     )
     business_value_range: tuple[int, int] = (-1000, 1000)
     claim_timeout_minutes: int = 30
+    auto_complete_parent: bool = True
     web_port: int = 8742
     mcp_transport: str = "stdio"
 
@@ -297,12 +298,59 @@ class SortField(str, Enum):
     PRIORITY = "priority"
 
 
+# ---------------------------------------------------------------------------
+# Lifecycle models
+# ---------------------------------------------------------------------------
+
+
+class CompletionContext(BaseModel):
+    """Rich metadata returned when a spec transitions to a terminal status."""
+
+    model_config = ConfigDict(frozen=True)
+
+    parent_progress: str | None = None
+    sprint_progress: str | None = None
+    sprint_complete: bool = False
+    newly_unblocked: list[SpecId] = Field(default_factory=list)
+    next_ready: list[SpecId] = Field(default_factory=list)
+    auto_completed_parents: list[SpecId] = Field(default_factory=list)
+
+
+class ConsistencyIssue(BaseModel):
+    """A single inconsistency found by validate_consistency()."""
+
+    model_config = ConfigDict(frozen=True)
+
+    type: str
+    spec_id: str
+    message: str
+    auto_corrected: bool = False
+
+
+class StatusUpdateResult(BaseModel):
+    """Result of a lifecycle-aware status update."""
+
+    spec: Spec
+    completion: CompletionContext | None = None
+
+
+class ArchiveResult(BaseModel):
+    """Result of a batch archive operation."""
+
+    archived: list[SpecId] = Field(default_factory=list)
+    skipped: list[SpecId] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 __all__ = [
     "DEFAULT_STATUSES",
     "DEFAULT_TYPES",
     "FIBONACCI_POINTS",
     "SPEC_ID_PATTERN",
+    "ArchiveResult",
     "ChangelogEntry",
+    "CompletionContext",
+    "ConsistencyIssue",
     "DueDateUrgency",
     "HookCondition",
     "HookEntry",
@@ -321,4 +369,5 @@ __all__ = [
     "SpecLinks",
     "SpecMeta",
     "Sprint",
+    "StatusUpdateResult",
 ]
