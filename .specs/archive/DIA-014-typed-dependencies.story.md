@@ -1,7 +1,7 @@
 ---
 id: DIA-014
 title: "Extend dependency graph with typed relationships"
-status: pending
+status: done
 type: feature
 tags: [core, graph, dependencies]
 business_value: 400

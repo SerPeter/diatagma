@@ -81,8 +81,8 @@ A CLI is the lowest-friction entry point for developers: no server to start, no 
 - [ ] `diatagma create <title> [--type story|epic|spike] [--prefix DIA]` — create spec from template
 - [ ] `diatagma show <id>` — display spec details
 - [ ] `diatagma list [--status pending] [--tag core] [--type feature]` — filtered spec listing
-- [ ] `diatagma ready [--limit N]` — show actionable specs (unblocked, priority-sorted)
-- [ ] `diatagma status <id> <new-status>` — update spec status
+- [ ] `diatagma next [--limit N]` — show actionable specs (unblocked, priority-sorted)
+- [ ] `diatagma status <id> <new-status> [--archive]` — update spec status, archive only possible if status is "done" or "cancelled"
 - [ ] `diatagma edit <id> [--field assignee] <value>` — update frontmatter field
 - [ ] `diatagma validate [--fix]` — check all specs for schema violations, dependency cycles, and duplicate IDs. `--fix` auto-resolves fixable issues (renumbers duplicates, etc.)
 - [ ] `diatagma renumber <old-id> <new-id> --file <filename>` — rename a spec's ID and update all references across specs

@@ -1,7 +1,7 @@
 ---
 id: DIA-015
 title: "Implement deterministic 'get ready specs' query"
-status: pending
+status: done
 type: feature
 tags: [core, query, agents]
 business_value: 500

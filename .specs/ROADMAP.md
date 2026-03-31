@@ -1,12 +1,11 @@
 # Roadmap
 
-## Phase 1: Core Library (DIA-011) — In Progress
+## Phase 1: Core Library (DIA-011) — Done
 
 **Goal**: A working core that can parse, store, query, rank, and coordinate spec files.
 
 Foundation for everything else. No UI, no MCP — just the shared library that all interfaces depend on. Testable via unit tests and CLI.
 
-**Done:**
 - DIA-001: Pydantic models
 - DIA-002: Frontmatter parser
 - DIA-003: SpecStore CRUD
@@ -15,15 +14,12 @@ Foundation for everything else. No UI, no MCP — just the shared library that a
 - DIA-006: Priority scoring (WSJF)
 - DIA-007: Changelog
 - DIA-008: Config loader
-
-**Remaining:**
 - DIA-014: Typed dependency relationships (blocks, relates_to, supersedes, discovered_from)
 - DIA-015: "Get ready specs" deterministic query
 - DIA-018: File watcher for live change detection
 - DIA-019: Archive with context summaries
 - DIA-021: Lifecycle automation (auto-complete parents, completion metadata, cycle archival)
-
-**Milestone**: `diatagma validate` works, `get_ready_specs()` returns priority-ranked actionable specs, all core tests pass.
+- DIA-023: Rename sprint → cycle, .tasks → .specs
 
 ## Phase 2: Agent & CLI Interfaces (DIA-012)
 

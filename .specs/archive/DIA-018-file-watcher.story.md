@@ -1,7 +1,7 @@
 ---
 id: DIA-018
 title: "Implement file watcher for live spec change detection"
-status: pending
+status: done
 type: feature
 tags: [core, watch, performance]
 business_value: 300

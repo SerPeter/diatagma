@@ -1,7 +1,7 @@
 ---
 id: DIA-011
 title: "Epic: Core library — models, parser, store, cache, graph, priority"
-status: in-progress
+status: done
 type: epic
 tags: [core, epic]
 business_value: 800
