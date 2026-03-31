@@ -19,7 +19,7 @@ Produce a complete UX design (wireframes + interaction spec) for the diatagma we
 
 ## Context
 
-Diatagma is a spec-driven project coordination tool. Specs are markdown files with YAML frontmatter stored in a `.tasks/` directory. Each spec has metadata (ID, title, status, type, priority score, tags, assignee, dependencies, parent) and a markdown body. The dashboard is the human interface for viewing, creating, editing, and coordinating these specs. It will be built with React + Vite (SPA) consuming a JSON API.
+Diatagma is a spec-driven project coordination tool. Specs are markdown files with YAML frontmatter stored in a `.specs/` directory. Each spec has metadata (ID, title, status, type, priority score, tags, assignee, dependencies, parent) and a markdown body. The dashboard is the human interface for viewing, creating, editing, and coordinating these specs. It will be built with React + Vite (SPA) consuming a JSON API.
 
 The dashboard must serve two user profiles:
 1. **Project leads** who triage, prioritize, and plan work across specs
@@ -50,7 +50,7 @@ links:
   relates_to: ["DIA-009"]    # Related specs (no blocking)
   supersedes: []             # Specs this one replaces
 assignee: "agent-a"        # Who is working on this
-sprint: "Sprint 1"         # Sprint assignment (optional)
+cycle: "Cycle 1"         # Cycle assignment (optional)
 due_date: 2026-04-15       # Deadline (optional)
 created: 2026-03-29
 ```
@@ -100,7 +100,7 @@ The default view. Columns represent statuses.
 - Epic cards should show child progress (e.g., "5/8 done" mini progress bar)
 - Blocked cards should show what's blocking them (tooltip or inline chip with blocker ID)
 - Column header shows count of specs in that column
-- Filter bar above board: filter by type, tags, assignee, sprint, parent epic
+- Filter bar above board: filter by type, tags, assignee, cycle, parent epic
 - Active filters should be visible as removable chips
 
 ### 2. List View
@@ -108,7 +108,7 @@ The default view. Columns represent statuses.
 Dense, tabular, sortable — for power users who want to see everything at once.
 
 **Requirements:**
-- Table columns: ID, title, status, type, assignee, story points, priority score, tags, parent, sprint, created, due date
+- Table columns: ID, title, status, type, assignee, story points, priority score, tags, parent, cycle, created, due date
 - All columns sortable (click header to sort/reverse)
 - All columns filterable (same filter bar as kanban)
 - Inline status change (click status cell → dropdown)
@@ -124,7 +124,7 @@ Full view of a single spec — metadata + markdown body.
 **Requirements:**
 - Appears as a slide-over panel (right side) or modal, not a full page navigation (preserves list/board context)
 - Header: ID, title (editable inline), status badge (clickable to change), type icon
-- Metadata grid: assignee, story points, business value, tags, sprint, due date, parent, blocked_by, relates_to — all editable inline
+- Metadata grid: assignee, story points, business value, tags, cycle, due date, parent, blocked_by, relates_to — all editable inline
 - Dependency section: visual list of blockers (with their status) and specs this one unblocks
 - Markdown body rendered with section headers
 - Edit mode: toggle to edit frontmatter fields and body markdown (side-by-side preview or tabbed)
@@ -152,13 +152,13 @@ Focused view of an epic and its children.
 - Epic header: title, status, overall progress bar (X/Y children done)
 - Children listed as mini-cards or compact rows, grouped by status
 - Same drag-and-drop status changes as kanban but scoped to this epic's children
-- Burndown or progress indicator (if sprint is set)
+- Burndown or progress indicator (if cycle is set)
 
-### 6. Sprint View (if sprint is configured)
+### 6. Cycle View (if cycle is configured)
 
 **Requirements:**
-- Sprint header: name, date range, goal, progress bar
-- Specs in the sprint shown as kanban or list (user's choice)
+- Cycle header: name, date range, goal, progress bar
+- Specs in the cycle shown as kanban or list (user's choice)
 - Velocity/capacity indicators if historical data exists
 - "Unfinished" section showing specs that didn't complete in time
 
@@ -167,7 +167,7 @@ Focused view of an epic and its children.
 ## Global UI Elements
 
 ### Navigation
-- Left sidebar or top nav with view switcher: Kanban | List | Graph | Sprint
+- Left sidebar or top nav with view switcher: Kanban | List | Graph | Cycle
 - Current view highlighted
 - Breadcrumbs when drilling into epic or detail views
 
@@ -183,7 +183,7 @@ Focused view of an epic and its children.
 - `j` / `k`: Navigate down/up in list or between cards
 - `Enter`: Open detail view for focused spec
 - `Esc`: Close detail/modal, clear search
-- `1-5`: Switch views (1=Kanban, 2=List, 3=Graph, 4=Sprint)
+- `1-5`: Switch views (1=Kanban, 2=List, 3=Graph, 4=Cycle)
 - `s`: Focus status dropdown for selected spec
 - `?`: Show keyboard shortcut reference
 
@@ -196,7 +196,7 @@ Focused view of an epic and its children.
 ### Empty States
 - No specs yet: guidance to create first spec or run `diatagma init`
 - No results for filter: "No specs match filters. [Clear filters]"
-- No specs in sprint: "No specs assigned to this sprint yet"
+- No specs in cycle: "No specs assigned to this cycle yet"
 
 ### Color & Visual Language
 - Status colors: pending (gray), blocked (red/orange), in-progress (blue), in-review (purple), done (green), cancelled (muted/strikethrough)
@@ -217,7 +217,7 @@ Focused view of an epic and its children.
 
 ## Deliverables
 
-- [ ] Wireframes for all 6 views (Kanban, List, Detail, Graph, Epic, Sprint)
+- [ ] Wireframes for all 6 views (Kanban, List, Detail, Graph, Epic, Cycle)
 - [ ] Wireframes for global elements (nav, command palette, keyboard shortcut reference, empty states)
 - [ ] Interaction spec: what happens on each user action (click, drag, keyboard shortcut)
 - [ ] Responsive breakpoint sketches (desktop + tablet)

@@ -21,7 +21,7 @@ def _spec(
     blocked_by: list[str] | None = None,
     assignee: str | None = None,
     tags: list[str] | None = None,
-    sprint: str | None = None,
+    cycle: str | None = None,
     business_value: int | None = None,
     story_points: int | None = None,
 ) -> Spec:
@@ -35,7 +35,7 @@ def _spec(
         links=links,
         assignee=assignee,
         tags=tags or [],
-        sprint=sprint,
+        cycle=cycle,
         business_value=business_value,
         story_points=story_points,
         created=date(2026, 3, 27),
@@ -176,7 +176,7 @@ class TestExcludeClaimed:
 
 
 class TestFilters:
-    """Optional tag, type, sprint filters."""
+    """Optional tag, type, cycle filters."""
 
     def test_filter_by_tags(self):
         specs = [
@@ -199,25 +199,25 @@ class TestFilters:
         result = get_next(specs, graph, type="bug", today=TODAY)
         assert [s.meta.id for s in result] == ["DIA-002"]
 
-    def test_filter_by_sprint(self):
+    def test_filter_by_cycle(self):
         specs = [
-            _spec("DIA-001", sprint="Sprint 1"),
-            _spec("DIA-002", sprint="Sprint 2"),
+            _spec("DIA-001", cycle="Cycle 1"),
+            _spec("DIA-002", cycle="Cycle 2"),
             _spec("DIA-003"),
         ]
         graph = _build(specs)
-        result = get_next(specs, graph, sprint="Sprint 1", today=TODAY)
+        result = get_next(specs, graph, cycle="Cycle 1", today=TODAY)
         assert [s.meta.id for s in result] == ["DIA-001"]
 
     def test_combined_filters(self):
         specs = [
-            _spec("DIA-001", spec_type="feature", tags=["core"], sprint="Sprint 1"),
-            _spec("DIA-002", spec_type="bug", tags=["core"], sprint="Sprint 1"),
-            _spec("DIA-003", spec_type="feature", tags=["web"], sprint="Sprint 1"),
+            _spec("DIA-001", spec_type="feature", tags=["core"], cycle="Cycle 1"),
+            _spec("DIA-002", spec_type="bug", tags=["core"], cycle="Cycle 1"),
+            _spec("DIA-003", spec_type="feature", tags=["web"], cycle="Cycle 1"),
         ]
         graph = _build(specs)
         result = get_next(
-            specs, graph, type="feature", tags=["core"], sprint="Sprint 1", today=TODAY
+            specs, graph, type="feature", tags=["core"], cycle="Cycle 1", today=TODAY
         )
         assert [s.meta.id for s in result] == ["DIA-001"]
 

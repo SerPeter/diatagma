@@ -1,4 +1,4 @@
-"""SpecStore — CRUD operations over the .tasks/ directory.
+"""SpecStore — CRUD operations over the .specs/ directory.
 
 The single source-of-truth layer. Every read/write goes through the
 filesystem. The store discovers spec files by scanning configured
@@ -11,7 +11,7 @@ File extensions determine spec type:
     .spike.md  — research spikes
 
 Key class:
-    SpecStore(tasks_dir: Path)
+    SpecStore(specs_dir: Path)
         .list(filters, sort_by)  → list[Spec]
         .get(spec_id)            → Spec
         .create(prefix, title, spec_type, template, **meta) → Spec
@@ -194,7 +194,7 @@ def _sort_key(spec: Spec, field: SortField) -> Any:
 
 
 class SpecStore:
-    """CRUD operations over the .tasks/ directory.
+    """CRUD operations over the .specs/ directory.
 
     The store scans the tasks directory (plus backlog/ and archive/
     subdirectories) for spec files, delegates parsing to parser.py,
@@ -204,15 +204,15 @@ class SpecStore:
 
     def __init__(
         self,
-        tasks_dir: Path,
+        specs_dir: Path,
         prefixes: dict[str, PrefixDef],
         templates: dict[str, str],
         settings: Settings | None = None,
         on_mutation: Callable[..., Any] | None = None,
     ) -> None:
-        self._tasks_dir = Path(tasks_dir)
-        self._backlog_dir = self._tasks_dir / "backlog"
-        self._archive_dir = self._tasks_dir / "archive"
+        self._specs_dir = Path(specs_dir)
+        self._backlog_dir = self._specs_dir / "backlog"
+        self._archive_dir = self._specs_dir / "archive"
         self._prefixes = prefixes
         self._templates = templates
         self._settings = settings or Settings()
@@ -275,7 +275,7 @@ class SpecStore:
 
             # Build filename and path
             filename = self._build_filename(spec_id, title, spec_type)
-            target_path = self._tasks_dir / filename
+            target_path = self._specs_dir / filename
 
             # Build metadata
             meta_dict: dict[str, Any] = {
@@ -394,7 +394,7 @@ class SpecStore:
     def restore_from_archive(self, spec_id: str, agent_id: str = "unknown") -> Spec:
         """Move a spec from archive/ back to the active tasks directory."""
         return self._move_spec(
-            spec_id, self._tasks_dir, "restored from archive", agent_id
+            spec_id, self._specs_dir, "restored from archive", agent_id
         )
 
     def is_archived(self, spec_id: str) -> bool:
@@ -426,9 +426,9 @@ class SpecStore:
     # --- Internal helpers --------------------------------------------------
 
     def _scan_dirs(self) -> builtins.list[Path]:
-        """Glob for spec files in tasks_dir, backlog/, and archive/."""
+        """Glob for spec files in specs_dir, backlog/, and archive/."""
         paths: builtins.list[Path] = []
-        for directory in (self._tasks_dir, self._backlog_dir, self._archive_dir):
+        for directory in (self._specs_dir, self._backlog_dir, self._archive_dir):
             if not directory.exists():
                 continue
             for p in directory.glob("*.md"):
@@ -512,8 +512,8 @@ class SpecStore:
             if spec.meta.assignee != f.assignee:
                 return False
 
-        if f.sprint is not None:
-            if spec.meta.sprint != f.sprint:
+        if f.cycle is not None:
+            if spec.meta.cycle != f.cycle:
                 return False
 
         if f.search is not None:

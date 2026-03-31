@@ -2,7 +2,7 @@
 
 ## Overview
 
-Spec-driven story coordination tool with both an MCP server (for AI agents) and a web dashboard (for humans), tracking work as plain markdown spec files in a `.tasks/` directory.
+Spec-driven story coordination tool with both an MCP server (for AI agents) and a web dashboard (for humans), tracking work as plain markdown spec files in a `.specs/` directory.
 
 Markdown files with YAML frontmatter are always the source of truth. All interfaces (MCP, web, manual editing) read and write the same files.
 
@@ -10,7 +10,7 @@ Markdown files with YAML frontmatter are always the source of truth. All interfa
 
 | Term | Meaning |
 |---|---|
-| **Spec** | Any markdown file in `.tasks/` — the unit of work definition |
+| **Spec** | Any markdown file in `.specs/` — the unit of work definition |
 | **Story** | A spec describing what needs to happen from the user's perspective (`type: feature`, `bug`, `chore`, `docs`) |
 | **Epic** | A spec that groups related stories into a larger initiative (`type: epic`) |
 | **Spike** | A spec for research/exploration that produces ADRs or research docs (`type: spike`) |
@@ -39,7 +39,7 @@ Every spec file starts with YAML frontmatter containing structured metadata:
 | `tags` | list[string] | Freeform categorization |
 | `business_value` | int | Log-scaled importance, range `[-1000, +1000]` |
 | `story_points` | int | Fibonacci sequence: `1, 2, 3, 5, 8, 13, 21` |
-| `sprint` | string | Sprint assignment |
+| `cycle` | string | Cycle assignment |
 | `assignee` | string | Human or agent ID |
 | `due_date` | date | Target completion date |
 | `dependencies` | list[string] | Spec IDs that must complete before this can start |
@@ -102,7 +102,7 @@ spike → research doc (docs/research/YYMMDD_slug.md) and/or ADR (docs/adr/NNN-s
 ## Directory Structure
 
 ```
-.tasks/
+.specs/
 ├── .gitignore              # Always ignores .cache/
 ├── .cache/                 # SQLite read cache (always gitignored)
 │   └── tasks.db
@@ -111,7 +111,7 @@ spike → research doc (docs/research/YYMMDD_slug.md) and/or ADR (docs/adr/NNN-s
 │   ├── prefixes.yaml       # Prefix definitions + descriptions + template mapping
 │   ├── schema.yaml         # Frontmatter validation rules
 │   ├── priority.yaml       # WSJF scoring weights
-│   ├── sprints.yaml        # Sprint boundary definitions
+│   ├── cycles.yaml         # Cycle boundary definitions
 │   ├── hooks.yaml          # Lifecycle hooks
 │   └── templates/
 │       ├── story.md        # Story body template (default)
@@ -128,7 +128,7 @@ spike → research doc (docs/research/YYMMDD_slug.md) and/or ADR (docs/adr/NNN-s
 
 ### Gitignore Strategy
 
-The `.tasks/.gitignore` always ignores `.cache/`. Whether spec files themselves are tracked is the user's choice — they manage their project's `.gitignore` as needed. The tool never manages gitignore contents beyond shipping the cache exclusion.
+The `.specs/.gitignore` always ignores `.cache/`. Whether spec files themselves are tracked is the user's choice — they manage their project's `.gitignore` as needed. The tool never manages gitignore contents beyond shipping the cache exclusion.
 
 ## Documentation Structure
 
@@ -153,7 +153,7 @@ Both ADRs and research docs are referenced from spec files (Context and Referenc
 
 ## Cache
 
-**Location**: `.tasks/.cache/tasks.db` (SQLite, always gitignored)
+**Location**: `.specs/.cache/tasks.db` (SQLite, always gitignored)
 
 **Purpose**: Accelerate listing, filtering, sorting, and full-text search without re-parsing every spec file on every request.
 
@@ -161,7 +161,7 @@ Both ADRs and research docs are referenced from spec files (Context and Referenc
 - Parsed frontmatter (all metadata fields, typed)
 - Computed fields: priority score, blocked/unblocked status, dependency graph edges
 - FTS5 full-text search index over spec bodies
-- Sprint aggregates (velocity, burndown data points)
+- Cycle aggregates (velocity, burndown data points)
 
 **Invalidation**:
 - File mtime-based — on access, compare cached mtime vs filesystem mtime per spec file
@@ -213,12 +213,12 @@ Litestar JSON API backend ([ADR-002](adr/002-litestar-over-fastapi.md)) + React/
 | **Spec list** | Sortable, filterable table with inline field editing |
 | **Spec detail** | Full spec view with editable frontmatter and markdown body |
 | **Dependency graph** | Interactive DAG visualization (React Flow) |
-| **Sprint planning** | Drag specs into sprints, see capacity vs committed points |
+| **Cycle planning** | Drag specs into cycles, see capacity vs committed points |
 | **Timeline/Gantt** | Rough scheduling based on story points + velocity |
 
 ### Capabilities
 
-- Filter by status, assignee, tags, parent, sprint, due date, prefix
+- Filter by status, assignee, tags, parent, cycle, due date, prefix
 - Sort by priority score, business value, due date, created date
 - Live search with results updating as you type
 - External file changes reflected on page refresh
@@ -266,11 +266,11 @@ priority = (business_value × w_bv + time_criticality × w_tc + risk_reduction �
 - **age_bonus**: prevents starvation (old pending specs drift upward)
 - **due_date_urgency**: step function with critical (≤3 days) and warning (≤7 days) thresholds
 
-All weights configurable in `.tasks/config/priority.yaml`. `get_next_story()` uses this computed score, not business_value alone.
+All weights configurable in `.specs/config/priority.yaml`. `get_next_story()` uses this computed score, not business_value alone.
 
 ## Changelog
 
-Append-only structured log at `.tasks/changelog.md`.
+Append-only structured log at `.specs/changelog.md`.
 
 ### Format
 
@@ -301,7 +301,7 @@ Every change records which agent (human or AI agent ID) made it, via the changel
 
 ## Schema Validation
 
-Configurable in `.tasks/config/schema.yaml`:
+Configurable in `.specs/config/schema.yaml`:
 
 - **Required fields** on every spec (id, title, status, type, created)
 - **Per-status requirements** (e.g. `in-progress` requires `assignee`)
@@ -315,7 +315,7 @@ Validation runs:
 
 ## Lifecycle Hooks
 
-Configurable in `.tasks/config/hooks.yaml`:
+Configurable in `.specs/config/hooks.yaml`:
 
 - **on_status_change** — e.g. auto-archive on `done`
 - **on_create** — e.g. validate frontmatter

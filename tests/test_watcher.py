@@ -108,39 +108,39 @@ class TestSpecFileFilter:
     """Watchfiles filter for spec .md files."""
 
     def setup_method(self):
-        self.tasks_dir = Path("/project/.tasks")
-        self.f = SpecFileFilter(self.tasks_dir)
+        self.specs_dir = Path("/project/.specs")
+        self.f = SpecFileFilter(self.specs_dir)
 
     def test_md_file_passes(self):
-        assert self.f(Change.modified, "/project/.tasks/DIA-001-foo.story.md") is True
+        assert self.f(Change.modified, "/project/.specs/DIA-001-foo.story.md") is True
 
     def test_non_md_rejected(self):
-        assert self.f(Change.modified, "/project/.tasks/something.py") is False
+        assert self.f(Change.modified, "/project/.specs/something.py") is False
 
     def test_txt_rejected(self):
-        assert self.f(Change.modified, "/project/.tasks/notes.txt") is False
+        assert self.f(Change.modified, "/project/.specs/notes.txt") is False
 
     def test_cache_dir_rejected(self):
-        assert self.f(Change.modified, "/project/.tasks/.cache/tasks.db") is False
+        assert self.f(Change.modified, "/project/.specs/.cache/tasks.db") is False
 
     def test_cache_subpath_rejected(self):
         assert (
-            self.f(Change.modified, "/project/.tasks/.cache/some/nested/file.md")
+            self.f(Change.modified, "/project/.specs/.cache/some/nested/file.md")
             is False
         )
 
     def test_tmp_file_rejected(self):
-        assert self.f(Change.modified, "/project/.tasks/edit.tmp") is False
+        assert self.f(Change.modified, "/project/.specs/edit.tmp") is False
 
     def test_backlog_md_passes(self):
         assert (
-            self.f(Change.modified, "/project/.tasks/backlog/DIA-010-foo.story.md")
+            self.f(Change.modified, "/project/.specs/backlog/DIA-010-foo.story.md")
             is True
         )
 
     def test_archive_md_passes(self):
         assert (
-            self.f(Change.modified, "/project/.tasks/archive/DIA-005-bar.story.md")
+            self.f(Change.modified, "/project/.specs/archive/DIA-005-bar.story.md")
             is True
         )
 

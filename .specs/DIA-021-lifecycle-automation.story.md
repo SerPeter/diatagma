@@ -66,7 +66,7 @@ Post-merge consistency is handled separately (see Constraints) — this spec cov
 
 ### Scenario: Task added to archived epic — error with override
 
-- **Given** DIA-011 is archived in `.tasks/archive/`
+- **Given** DIA-011 is archived in `.specs/archive/`
 - **When** a new spec is created with `parent: DIA-011`
 - **Then** an error is returned: "DIA-011 is archived. Use --reopen to unarchive and reopen it."
 - **When** `--reopen` is passed
@@ -84,13 +84,13 @@ Post-merge consistency is handled separately (see Constraints) — this spec cov
 
 - **Given** Cycle 1 has ended, containing 8 specs: 6 done, 1 cancelled, 1 in-progress
 - **When** `archive_cycle("Cycle 1")` is called
-- **Then** the 7 terminal specs are moved to `.tasks/archive/`, the 1 in-progress spec remains active, and a warning lists the remaining specs
+- **Then** the 7 terminal specs are moved to `.specs/archive/`, the 1 in-progress spec remains active, and a warning lists the remaining specs
 
 ### Scenario: Batch archive all completed specs
 
 - **Given** 5 specs are `done` and 2 are `cancelled` across all cycles
 - **When** `archive_done()` is called
-- **Then** all 7 terminal specs are moved to `.tasks/archive/`
+- **Then** all 7 terminal specs are moved to `.specs/archive/`
 
 ### Scenario: Completion metadata on non-done status change
 
@@ -196,15 +196,15 @@ Post-merge consistency is handled separately (see Constraints) — this spec cov
 
 - [docs/architecture.md](docs/architecture.md)
 - DIA-019 (implementation summary / archive warning)
-- DIA-023 (sprint → cycle rename)
+- DIA-023 (sprint → cycle rename, now complete)
 
 ---
 <!-- ═══ Fill during/after implementation ═══ -->
 
 ## Implementation Summary
 
-Added `LifecycleEngine` class in new `core/lifecycle.py` module, orchestrating lifecycle transitions across store, graph, and priority layers. `update_status()` returns `CompletionContext` with parent/sprint progress, newly unblocked specs, next ready work, and auto-completed parents. Reopening guards on `create_spec()` protect completed epics and sprints. `validate_consistency()` detects post-merge inconsistencies (done epics with active children, mixed sprint state, orphaned children) with auto-correction for epics.
+Added `LifecycleEngine` class in new `core/lifecycle.py` module, orchestrating lifecycle transitions across store, graph, and priority layers. `update_status()` returns `CompletionContext` with parent/cycle progress, newly unblocked specs, next ready work, and auto-completed parents. Reopening guards on `create_spec()` protect completed epics and cycles. `validate_consistency()` detects post-merge inconsistencies (done epics with active children, mixed cycle state, orphaned children) with auto-correction for epics.
 
 ## Implementation Notes
 
-Lifecycle logic placed in dedicated module rather than expanding store — store stays CRUD, lifecycle is business logic. Graph patched in-memory via `update_node_status()` after mutations to avoid full rebuilds. Sprint naming kept as-is pending DIA-023 rename.
+Lifecycle logic placed in dedicated module rather than expanding store — store stays CRUD, lifecycle is business logic. Graph patched in-memory via `update_node_status()` after mutations to avoid full rebuilds. Cycle naming applied after DIA-023 rename.

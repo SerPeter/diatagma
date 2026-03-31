@@ -1,6 +1,6 @@
-"""Board data endpoints — Kanban, sprint planning, dependency graph.
+"""Board data endpoints — Kanban, cycle planning, dependency graph.
 
 Provides pre-shaped JSON for board views: specs grouped by status
-(kanban), grouped by sprint (planning), and graph edges for the
+(kanban), grouped by cycle (planning), and graph edges for the
 dependency visualization.
 """

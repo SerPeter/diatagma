@@ -54,7 +54,7 @@ The story template already includes an `## Implementation Notes` section where a
 - Summaries must be deterministic (no LLM calls) — extract, don't generate
 - Summary block must be under 200 words (target: context-efficient)
 - Must not modify the original frontmatter
-- Archive path: `.tasks/archive/{id}.{type}.md`
+- Archive path: `.specs/archive/{id}.{type}.md`
 
 ## Requirements
 

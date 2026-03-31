@@ -1,7 +1,7 @@
 ---
 id: DIA-023
 title: "Rename 'sprint' to 'cycle' across codebase and config"
-status: pending
+status: done
 type: feature
 tags: [core, refactor]
 business_value: 100
@@ -28,15 +28,15 @@ This is a pure rename — no behavioral changes. Separated from DIA-021 (lifecyc
 
 ### Scenario: Config file renamed
 
-- **Given** `.tasks/config/sprints.yaml` exists
+- **Given** `.specs/config/sprints.yaml` exists
 - **When** the rename is applied
-- **Then** the file is renamed to `.tasks/config/cycles.yaml` with `cycles:` as the top-level key (previously `sprints:`)
+- **Then** the file is renamed to `.specs/config/cycles.yaml` with `cycles:` as the top-level key (previously `sprints:`)
 
 ### Scenario: Frontmatter field renamed
 
 - **Given** a spec has `sprint: "Sprint 1"` in frontmatter
 - **When** the spec is parsed
-- **Then** the field is `cycle: "Cycle 1"` (note: existing spec files in `.tasks/` need migration only if they use the field)
+- **Then** the field is `cycle: "Cycle 1"` (note: existing spec files in `.specs/` need migration only if they use the field)
 
 ### Scenario: Code references updated
 
@@ -77,4 +77,8 @@ This is a pure rename — no behavioral changes. Separated from DIA-021 (lifecyc
 
 ## Implementation Summary
 
+Pure mechanical rename of `sprint` → `cycle` across ~165 references in 15+ files. Renamed `Sprint` model to `Cycle`, `SpecMeta.sprint` to `.cycle`, `SpecFilter.sprint` to `.cycle`, `_load_sprints()` to `_load_cycles()`, `archive_sprint()` to `archive_cycle()`, and all related functions/variables/strings. Renamed `sprints.yaml` config file to `cycles.yaml`. Fixed a variable shadowing issue in `next.py` where the `cycle` parameter collided with a `cycle` loop variable from circular dependency detection (renamed to `dep_cycle`).
+
 ## Implementation Notes
+
+The replace_all approach was efficient but required care: in `next.py`, the graph circular dependency detection used `for cycle in cycles:` which collided with the new `cycle` filter parameter after rename. Resolved by renaming the loop variable to `dep_cycle`/`dep_cycles`.

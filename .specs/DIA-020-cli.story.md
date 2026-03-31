@@ -61,9 +61,9 @@ A CLI is the lowest-friction entry point for developers: no server to start, no 
 
 ### Scenario: Initialize a new project
 
-- **Given** a repository with no `.tasks/` directory
+- **Given** a repository with no `.specs/` directory
 - **When** `diatagma init` is run
-- **Then** the `.tasks/` directory structure is created with default config, templates, and a `.gitignore` for the cache
+- **Then** the `.specs/` directory structure is created with default config, templates, and a `.gitignore` for the cache
 
 ## Constraints
 
@@ -77,7 +77,7 @@ A CLI is the lowest-friction entry point for developers: no server to start, no 
 ## Requirements
 
 ### Commands
-- [ ] `diatagma init` — scaffold `.tasks/` directory with config and templates
+- [ ] `diatagma init` — scaffold `.specs/` directory with config and templates
 - [ ] `diatagma create <title> [--type story|epic|spike] [--prefix DIA]` — create spec from template
 - [ ] `diatagma show <id>` — display spec details
 - [ ] `diatagma list [--status pending] [--tag core] [--type feature]` — filtered spec listing
@@ -89,7 +89,7 @@ A CLI is the lowest-friction entry point for developers: no server to start, no 
 - [ ] `diatagma graph [--format json|dot]` — export dependency graph
 - [ ] `diatagma search <query>` — full-text search via FTS5
 - [ ] `diatagma agents-md` — generate AGENTS.md (delegates to DIA-017)
-- [ ] `diatagma archive-sprint <sprint-name>` — archive completed sprint specs (delegates to DIA-021)
+- [ ] `diatagma archive-cycle <cycle-name>` — archive completed cycle specs (delegates to DIA-021)
 - [ ] `diatagma archive --done` — archive all terminal specs (delegates to DIA-021)
 - [ ] `diatagma serve` — start web API server (delegates to DIA-010)
 - [ ] `diatagma mcp` — start MCP server (delegates to DIA-009)

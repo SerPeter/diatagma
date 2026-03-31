@@ -1,11 +1,11 @@
 """File watcher for live spec change detection.
 
-Monitors the ``.tasks/`` directory for spec file changes and dispatches
+Monitors the ``.specs/`` directory for spec file changes and dispatches
 domain events to registered callbacks. Uses ``watchfiles`` (Rust-based,
 cross-platform) for filesystem monitoring with built-in debouncing.
 
 Key classes:
-    SpecWatcher        — background thread that monitors .tasks/
+    SpecWatcher        — background thread that monitors .specs/
     SpecFileFilter     — watchfiles filter for spec .md files
     SpecChangeEvent    — domain event for a single file change
 
@@ -101,11 +101,11 @@ class SpecFileFilter(DefaultFilter):
     - Everything rejected by ``DefaultFilter`` (``.git``, ``__pycache__``, etc.)
     """
 
-    def __init__(self, tasks_dir: Path) -> None:
+    def __init__(self, specs_dir: Path) -> None:
         # Normalize to forward slashes for consistent prefix matching,
         # since watchfiles always delivers paths with OS-native separators
         # but we need to match on both platforms.
-        cache_path = str(tasks_dir / ".cache")
+        cache_path = str(specs_dir / ".cache")
         self._cache_prefixes = {cache_path, cache_path.replace("\\", "/")}
         super().__init__()
 
@@ -127,21 +127,21 @@ class SpecFileFilter(DefaultFilter):
 
 
 class SpecWatcher:
-    """Background file watcher for the ``.tasks/`` directory.
+    """Background file watcher for the ``.specs/`` directory.
 
     Monitors spec files for changes and dispatches batched domain events
     to registered callbacks. Runs as a daemon thread using ``watchfiles``.
 
     Usage::
 
-        watcher = SpecWatcher(tasks_dir, callbacks=[my_callback])
+        watcher = SpecWatcher(specs_dir, callbacks=[my_callback])
         watcher.start()
         # ... later ...
         watcher.stop()
 
     Or as a context manager::
 
-        with SpecWatcher(tasks_dir, callbacks=[my_callback]) as w:
+        with SpecWatcher(specs_dir, callbacks=[my_callback]) as w:
             # watcher is running
             ...
         # watcher is stopped
@@ -149,12 +149,12 @@ class SpecWatcher:
 
     def __init__(
         self,
-        tasks_dir: Path,
+        specs_dir: Path,
         callbacks: list[WatcherCallback] | None = None,
         *,
         debounce: int = 500,
     ) -> None:
-        self._tasks_dir = Path(tasks_dir)
+        self._specs_dir = Path(specs_dir)
         self._callbacks: list[WatcherCallback] = list(callbacks or [])
         self._debounce = debounce
         self._stop_event = threading.Event()
@@ -182,7 +182,7 @@ class SpecWatcher:
             daemon=True,
         )
         self._thread.start()
-        logger.info("spec watcher started for {}", self._tasks_dir)
+        logger.info("spec watcher started for {}", self._specs_dir)
 
     def stop(self, timeout: float = 5.0) -> None:
         """Signal the watcher to stop and wait for the thread to exit."""
@@ -205,11 +205,11 @@ class SpecWatcher:
 
     def _watch_loop(self) -> None:
         """Main loop: iterate watchfiles and dispatch to callbacks."""
-        file_filter = SpecFileFilter(self._tasks_dir)
+        file_filter = SpecFileFilter(self._specs_dir)
 
         try:
             for raw_changes in watch(
-                self._tasks_dir,
+                self._specs_dir,
                 watch_filter=file_filter,
                 debounce=self._debounce,
                 stop_event=self._stop_event,

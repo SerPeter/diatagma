@@ -1,6 +1,6 @@
 """SQLite-backed read cache for parsed spec data.
 
-Lives at .tasks/.cache/tasks.db (always gitignored). Accelerates
+Lives at .specs/.cache/tasks.db (always gitignored). Accelerates
 listing, filtering, and sorting without re-parsing every spec file.
 
 Invalidation: mtime-based per file. On access, compare cached mtime vs
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     tags            TEXT NOT NULL DEFAULT '[]',
     business_value  INTEGER,
     story_points    INTEGER,
-    sprint          TEXT,
+    cycle          TEXT,
     assignee        TEXT,
     due_date        TEXT,
     links           TEXT NOT NULL DEFAULT '{}',
@@ -267,7 +267,7 @@ class SpecCache:
             "tags": _deserialize_list(row["tags"]),
             "business_value": row["business_value"],
             "story_points": row["story_points"],
-            "sprint": row["sprint"],
+            "cycle": row["cycle"],
             "assignee": row["assignee"],
             "due_date": _deserialize_date(row["due_date"]),
             "links": orjson.loads(row["links"]),

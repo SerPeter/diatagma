@@ -20,7 +20,7 @@ from tests.conftest import seed_spec_file
 
 
 def _make_spec(
-    tasks_dir: Path,
+    specs_dir: Path,
     spec_id: str = "DIA-001",
     title: str = "Test spec",
     spec_type: str = "feature",
@@ -28,9 +28,9 @@ def _make_spec(
     **extra_meta: object,
 ) -> Spec:
     """Seed a spec file on disk and return the parsed Spec."""
-    seed_spec_file(tasks_dir, spec_id, title, spec_type, status, **extra_meta)
+    seed_spec_file(specs_dir, spec_id, title, spec_type, status, **extra_meta)
     # Find the file just written
-    for p in tasks_dir.glob(f"{spec_id}-*"):
+    for p in specs_dir.glob(f"{spec_id}-*"):
         return parse_spec_file(p)
     msg = f"seed_spec_file did not create a file for {spec_id}"
     raise RuntimeError(msg)
@@ -44,8 +44,8 @@ def _make_spec(
 class TestInit:
     """Database creation and initialization."""
 
-    def test_creates_db_file(self, tmp_tasks_dir: Path) -> None:
-        cache_dir = tmp_tasks_dir / ".cache"
+    def test_creates_db_file(self, tmp_specs_dir: Path) -> None:
+        cache_dir = tmp_specs_dir / ".cache"
         cache = SpecCache(cache_dir)
         assert (cache_dir / "tasks.db").exists()
         cache.close()
@@ -59,12 +59,12 @@ class TestInit:
 class TestVersion:
     """Cache version checking and data clearing."""
 
-    def test_version_mismatch_clears_data(self, tmp_tasks_dir: Path) -> None:
-        cache_dir = tmp_tasks_dir / ".cache"
+    def test_version_mismatch_clears_data(self, tmp_specs_dir: Path) -> None:
+        cache_dir = tmp_specs_dir / ".cache"
         cache = SpecCache(cache_dir)
 
         # Seed a spec into the cache
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Version test")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Version test")
         cache.put(spec)
         assert cache.get("DIA-001") is not None
 
@@ -78,10 +78,10 @@ class TestVersion:
         assert cache2.get("DIA-001") is None
         cache2.close()
 
-    def test_version_match_preserves_data(self, tmp_tasks_dir: Path) -> None:
-        cache_dir = tmp_tasks_dir / ".cache"
+    def test_version_match_preserves_data(self, tmp_specs_dir: Path) -> None:
+        cache_dir = tmp_specs_dir / ".cache"
         cache = SpecCache(cache_dir)
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Preserved")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Preserved")
         cache.put(spec)
         cache.close()
 
@@ -100,8 +100,8 @@ class TestVersion:
 class TestPutAndGet:
     """put() and get() round-tripping."""
 
-    def test_round_trip(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Round trip")
+    def test_round_trip(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Round trip")
         spec_cache.put(spec)
         result = spec_cache.get("DIA-001")
         assert result is not None
@@ -112,8 +112,8 @@ class TestPutAndGet:
     def test_get_nonexistent(self, spec_cache: SpecCache) -> None:
         assert spec_cache.get("DIA-999") is None
 
-    def test_get_stale_mtime(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Stale test")
+    def test_get_stale_mtime(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Stale test")
         spec_cache.put(spec)
 
         # Touch the file to change mtime
@@ -123,8 +123,8 @@ class TestPutAndGet:
 
         assert spec_cache.get("DIA-001") is None
 
-    def test_get_missing_file(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Will be deleted")
+    def test_get_missing_file(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Will be deleted")
         spec_cache.put(spec)
 
         assert spec.file_path is not None
@@ -132,8 +132,8 @@ class TestPutAndGet:
 
         assert spec_cache.get("DIA-001") is None
 
-    def test_put_overwrites(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Original")
+    def test_put_overwrites(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Original")
         spec_cache.put(spec)
 
         # Update the spec meta and re-put
@@ -147,10 +147,10 @@ class TestPutAndGet:
         assert result.meta.title == "Updated"
 
     def test_list_fields_roundtrip(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
         spec = _make_spec(
-            tmp_tasks_dir,
+            tmp_specs_dir,
             "DIA-001",
             "Lists",
             tags=["core", "models"],
@@ -167,10 +167,10 @@ class TestPutAndGet:
         assert result.meta.links.relates_to == ["DIA-003"]
 
     def test_date_fields_roundtrip(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
         spec = _make_spec(
-            tmp_tasks_dir,
+            tmp_specs_dir,
             "DIA-001",
             "Dates",
             due_date=date(2026, 6, 15),
@@ -187,14 +187,14 @@ class TestPutAndGet:
         assert result.meta.updated == date(2026, 3, 28)
         assert result.meta.due_date == date(2026, 6, 15)
 
-    def test_nullable_fields(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Nullable")
+    def test_nullable_fields(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Nullable")
         spec_cache.put(spec)
         result = spec_cache.get("DIA-001")
         assert result is not None
         assert result.meta.business_value is None
         assert result.meta.story_points is None
-        assert result.meta.sprint is None
+        assert result.meta.cycle is None
         assert result.meta.assignee is None
         assert result.meta.due_date is None
         assert result.meta.parent is None
@@ -210,9 +210,9 @@ class TestInvalidate:
     """invalidate() removes entries."""
 
     def test_invalidate_removes(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "To invalidate")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "To invalidate")
         spec_cache.put(spec)
         assert spec_cache.get("DIA-001") is not None
 
@@ -224,9 +224,9 @@ class TestInvalidate:
         spec_cache.invalidate("DIA-999")
 
     def test_invalidate_clears_fts(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "FTS cleanup")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "FTS cleanup")
         spec_cache.put(spec)
         spec_cache.invalidate("DIA-001")
 
@@ -243,15 +243,15 @@ class TestRebuild:
     """rebuild() replaces all cached data."""
 
     def test_rebuild_replaces_all(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
         # Put an old entry
-        old_spec = _make_spec(tmp_tasks_dir, "DIA-001", "Old")
+        old_spec = _make_spec(tmp_specs_dir, "DIA-001", "Old")
         spec_cache.put(old_spec)
 
         # Rebuild with different specs
-        new1 = _make_spec(tmp_tasks_dir, "DIA-002", "New one")
-        new2 = _make_spec(tmp_tasks_dir, "DIA-003", "New two")
+        new1 = _make_spec(tmp_specs_dir, "DIA-002", "New one")
+        new2 = _make_spec(tmp_specs_dir, "DIA-003", "New two")
         spec_cache.rebuild([new1, new2])
 
         assert spec_cache.get("DIA-001") is None
@@ -259,9 +259,9 @@ class TestRebuild:
         assert spec_cache.get("DIA-003") is not None
 
     def test_rebuild_empty_list(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Will be cleared")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Will be cleared")
         spec_cache.put(spec)
 
         spec_cache.rebuild([])
@@ -278,11 +278,11 @@ class TestQuery:
     """query() with filters and sorting."""
 
     @pytest.fixture(autouse=True)
-    def _seed_specs(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
+    def _seed_specs(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
         """Seed 5 specs for query tests."""
         specs = [
             _make_spec(
-                tmp_tasks_dir,
+                tmp_specs_dir,
                 "DIA-001",
                 "Alpha feature",
                 "feature",
@@ -294,7 +294,7 @@ class TestQuery:
                 assignee="alice",
             ),
             _make_spec(
-                tmp_tasks_dir,
+                tmp_specs_dir,
                 "DIA-002",
                 "Beta bug",
                 "bug",
@@ -305,7 +305,7 @@ class TestQuery:
                 assignee="bob",
             ),
             _make_spec(
-                tmp_tasks_dir,
+                tmp_specs_dir,
                 "DIA-003",
                 "Gamma chore",
                 "chore",
@@ -315,7 +315,7 @@ class TestQuery:
                 story_points=2,
             ),
             _make_spec(
-                tmp_tasks_dir,
+                tmp_specs_dir,
                 "EX-001",
                 "Delta spike",
                 "spike",
@@ -324,7 +324,7 @@ class TestQuery:
                 business_value=200,
             ),
             _make_spec(
-                tmp_tasks_dir,
+                tmp_specs_dir,
                 "DIA-004",
                 "Epsilon docs",
                 "docs",
@@ -428,10 +428,10 @@ class TestQuery:
         assert ids == ["EX-001", "DIA-004", "DIA-003", "DIA-002", "DIA-001"]
 
     def test_query_excludes_stale(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
         # Touch DIA-001's file to make it stale
-        for p in tmp_tasks_dir.glob("DIA-001-*"):
+        for p in tmp_specs_dir.glob("DIA-001-*"):
             time.sleep(0.05)
             p.touch()
 
@@ -454,16 +454,16 @@ class TestQuery:
 class TestFTS:
     """FTS5 full-text search."""
 
-    def test_fts_search_title(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Pydantic models")
+    def test_fts_search_title(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Pydantic models")
         spec_cache.put(spec)
 
         results = spec_cache.query(SpecFilter(search="Pydantic"))
         assert len(results) == 1
         assert results[0].meta.id == "DIA-001"
 
-    def test_fts_search_body(self, spec_cache: SpecCache, tmp_tasks_dir: Path) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Cache module")
+    def test_fts_search_body(self, spec_cache: SpecCache, tmp_specs_dir: Path) -> None:
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Cache module")
         # Set raw_body with searchable content
         spec.raw_body = "## Description\n\nImplement SQLite acceleration layer."
         spec_cache.put(spec)
@@ -473,9 +473,9 @@ class TestFTS:
         assert results[0].meta.id == "DIA-001"
 
     def test_fts_updated_on_put(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Original title")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Original title")
         spec_cache.put(spec)
 
         # Update title and re-put
@@ -493,9 +493,9 @@ class TestFTS:
         assert len(results) == 0
 
     def test_fts_cleared_on_invalidate(
-        self, spec_cache: SpecCache, tmp_tasks_dir: Path
+        self, spec_cache: SpecCache, tmp_specs_dir: Path
     ) -> None:
-        spec = _make_spec(tmp_tasks_dir, "DIA-001", "Searchable spec")
+        spec = _make_spec(tmp_specs_dir, "DIA-001", "Searchable spec")
         spec_cache.put(spec)
         spec_cache.invalidate("DIA-001")
 

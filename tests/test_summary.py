@@ -209,11 +209,11 @@ class TestArchiveWarning:
         return {"DIA": PrefixDef(description="test", template="story")}
 
     @pytest.fixture
-    def store(self, tmp_tasks_dir, prefixes) -> SpecStore:
-        return SpecStore(tmp_tasks_dir, prefixes, templates={"story": ""})
+    def store(self, tmp_specs_dir, prefixes) -> SpecStore:
+        return SpecStore(tmp_specs_dir, prefixes, templates={"story": ""})
 
-    def test_archive_without_summary_warns(self, store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "No summary")
+    def test_archive_without_summary_warns(self, store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "No summary")
         messages: list[str] = []
         sink_id = logger.add(lambda m: messages.append(str(m)), level="WARNING")
         try:
@@ -228,7 +228,7 @@ class TestArchiveWarning:
         )
 
     def test_archive_with_summary_no_warning(
-        self, store: SpecStore, tmp_tasks_dir: Path
+        self, store: SpecStore, tmp_specs_dir: Path
     ):
         meta = SpecMeta.model_validate(
             {
@@ -245,7 +245,7 @@ class TestArchiveWarning:
                 description="Build widgets.",
                 implementation_summary="Built widgets with factory pattern.",
             ),
-            file_path=tmp_tasks_dir / "DIA-002-has-summary.story.md",
+            file_path=tmp_specs_dir / "DIA-002-has-summary.story.md",
         )
         write_spec_file(spec, spec.file_path)
 
@@ -262,9 +262,9 @@ class TestArchiveWarning:
             "without an ## Implementation Summary section" in m for m in messages
         )
 
-    def test_archive_succeeds_regardless(self, store: SpecStore, tmp_tasks_dir: Path):
+    def test_archive_succeeds_regardless(self, store: SpecStore, tmp_specs_dir: Path):
         """Archive proceeds even without summary — warning only, not blocking."""
-        seed_spec_file(tmp_tasks_dir, "DIA-003", "No summary either")
+        seed_spec_file(tmp_specs_dir, "DIA-003", "No summary either")
         spec = store.move_to_archive("DIA-003")
         assert spec.file_path is not None
-        assert (tmp_tasks_dir / "archive").glob("DIA-003-*.md")
+        assert (tmp_specs_dir / "archive").glob("DIA-003-*.md")

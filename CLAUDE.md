@@ -12,7 +12,7 @@ Spec-driven story coordination for humans and AI agents. Markdown spec files wit
 - **Litestar** for web API backend ([ADR-002](docs/adr/002-litestar-over-fastapi.md))
 - **React + Vite** for dashboard frontend ([ADR-003](docs/adr/003-react-vite-frontend.md))
 - **networkx** for dependency DAG
-- **SQLite** for read cache (`.tasks/.cache/tasks.db`)
+- **SQLite** for read cache (`.specs/.cache/tasks.db`)
 - **Pydantic 2.x** for all models and validation
 - **Ruff** for linting/formatting, **ty** for type checking
 
@@ -30,22 +30,22 @@ frontend/  — React dashboard (Vite SPA)
 
 ## Terminology
 
-- **Spec** = any markdown file in `.tasks/` (the unit of work)
+- **Spec** = any markdown file in `.specs/` (the unit of work)
 - **Story** = a spec from the user's perspective (`.story.md`)
 - **Epic** = a spec grouping related stories (`.epic.md`)
 - **Spike** = a research spec producing ADRs/research docs (`.spike.md`)
 
 ## Spec System (Dogfooding)
 
-This repo uses its own `.tasks/` directory with the `DIA` prefix.
+This repo uses its own `.specs/` directory with the `DIA` prefix.
 
-- Config: `.tasks/config/`
-- Templates: `.tasks/config/templates/` (story.md, epic.md, spike.md)
-- Roadmap: `.tasks/ROADMAP.md`
-- Changelog: `.tasks/changelog.md`
-- Active specs: `.tasks/DIA-*.{story,epic,spike}.md`
-- Backlog: `.tasks/backlog/`
-- Archive: `.tasks/archive/`
+- Config: `.specs/config/`
+- Templates: `.specs/config/templates/` (story.md, epic.md, spike.md)
+- Roadmap: `.specs/ROADMAP.md`
+- Changelog: `.specs/changelog.md`
+- Active specs: `.specs/DIA-*.{story,epic,spike}.md`
+- Backlog: `.specs/backlog/`
+- Archive: `.specs/archive/`
 
 ## Documentation
 

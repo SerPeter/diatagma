@@ -21,7 +21,7 @@ Foundation for everything else. No UI, no MCP — just the shared library that a
 - DIA-015: "Get ready specs" deterministic query
 - DIA-018: File watcher for live change detection
 - DIA-019: Archive with context summaries
-- DIA-021: Lifecycle automation (auto-complete parents, completion metadata, sprint archival)
+- DIA-021: Lifecycle automation (auto-complete parents, completion metadata, cycle archival)
 
 **Milestone**: `diatagma validate` works, `get_ready_specs()` returns priority-ranked actionable specs, all core tests pass.
 
@@ -52,7 +52,7 @@ Litestar JSON API backend + React/Vite frontend. Keyboard-first UX, sub-100ms re
 
 **Goal**: Production-ready tool with smooth DX for both humans and agents.
 
-- Sprint management
+- Cycle management
 - Dependency graph visualization (React Flow)
 - `diatagma init` scaffolding command
 - Package publication (PyPI)

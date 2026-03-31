@@ -21,10 +21,10 @@ Every other module depends on these models — parser serializes to/from them, s
 
 ## Requirements
 
-- [ ] `TaskMeta` model: id, title, status, type, tags, business_value, story_points, epic, sprint, assignee, due_date, dependencies, blocked_by, related_to, parent, created, updated
+- [ ] `TaskMeta` model: id, title, status, type, tags, business_value, story_points, epic, cycle, assignee, due_date, dependencies, blocked_by, related_to, parent, created, updated
 - [ ] `TaskBody` model: description, context, requirements, acceptance_criteria, implementation_details (all optional strings)
 - [ ] `Task` model: TaskMeta + TaskBody + file_path + computed fields (priority_score, is_blocked)
-- [ ] Config models: `Settings`, `PrefixDef`, `SchemaConfig`, `PriorityConfig`, `Sprint`, `HooksConfig`
+- [ ] Config models: `Settings`, `PrefixDef`, `SchemaConfig`, `PriorityConfig`, `Cycle`, `HooksConfig`
 - [ ] All models use strict validation, sensible defaults, and clear docstrings
 
 ## Acceptance Criteria

@@ -8,7 +8,7 @@ Key class:
     LifecycleEngine(store, settings)
         .update_status(spec_id, new_status, ..., graph, all_specs) → StatusUpdateResult
         .create_spec(prefix, title, ..., all_specs, **meta) → Spec
-        .archive_sprint(sprint_name, ..., all_specs) → ArchiveResult
+        .archive_cycle(cycle_name, ..., all_specs) → ArchiveResult
         .archive_done(..., all_specs) → ArchiveResult
         .validate_consistency(all_specs, ...) → list[ConsistencyIssue]
 """
@@ -27,7 +27,7 @@ from diatagma.core.models import (
     Settings,
     Spec,
     SpecId,
-    Sprint,
+    Cycle,
     StatusUpdateResult,
 )
 from diatagma.core.next import get_next
@@ -71,7 +71,7 @@ class LifecycleEngine:
 
         When the new status is terminal (done/cancelled), builds a
         ``CompletionContext`` with parent progress, newly unblocked specs,
-        sprint status, and auto-completes parent epics if applicable.
+        cycle status, and auto-completes parent epics if applicable.
         """
         updated = self._store.update(spec_id, agent_id=agent_id, status=new_status)
 
@@ -89,8 +89,8 @@ class LifecycleEngine:
 
         ctx = CompletionContext(
             parent_progress=_parent_progress(updated, all_specs),
-            sprint_progress=_sprint_progress(updated, all_specs),
-            sprint_complete=_sprint_complete(updated, all_specs),
+            cycle_progress=_cycle_progress(updated, all_specs),
+            cycle_complete=_cycle_complete(updated, all_specs),
             newly_unblocked=_newly_unblocked(spec_id, graph),
             next_ready=[s.meta.id for s in get_next(all_specs, graph, n=5)],
             auto_completed_parents=auto_completed,
@@ -109,37 +109,37 @@ class LifecycleEngine:
         all_specs: list[Spec] | None = None,
         **meta: Any,
     ) -> Spec:
-        """Create a spec with lifecycle guards on parent and sprint.
+        """Create a spec with lifecycle guards on parent and cycle.
 
         Raises ``LifecycleError`` if the parent epic is archived or the
-        sprint is complete, unless ``reopen=True``.
+        cycle is complete, unless ``reopen=True``.
         """
         parent_id = meta.get("parent")
-        sprint_name = meta.get("sprint")
+        cycle_name = meta.get("cycle")
 
         if parent_id:
             self._guard_parent(parent_id, agent_id, reopen)
 
-        if sprint_name and all_specs is not None:
-            self._guard_sprint(sprint_name, all_specs, reopen)
+        if cycle_name and all_specs is not None:
+            self._guard_cycle(cycle_name, all_specs, reopen)
 
         return self._store.create(prefix, title, agent_id=agent_id, **meta)
 
     # --- Batch archival ----------------------------------------------------
 
-    def archive_sprint(
+    def archive_cycle(
         self,
-        sprint_name: str,
+        cycle_name: str,
         agent_id: str = "unknown",
         *,
         all_specs: list[Spec] | None = None,
     ) -> ArchiveResult:
-        """Move all terminal specs in a sprint to archive."""
+        """Move all terminal specs in a cycle to archive."""
         if all_specs is None:
             all_specs = self._store.list()
 
-        sprint_specs = [s for s in all_specs if s.meta.sprint == sprint_name]
-        return self._archive_specs(sprint_specs, agent_id)
+        cycle_specs = [s for s in all_specs if s.meta.cycle == cycle_name]
+        return self._archive_specs(cycle_specs, agent_id)
 
     def archive_done(
         self,
@@ -147,7 +147,7 @@ class LifecycleEngine:
         *,
         all_specs: list[Spec] | None = None,
     ) -> ArchiveResult:
-        """Move all terminal specs to archive, regardless of sprint."""
+        """Move all terminal specs to archive, regardless of cycle."""
         if all_specs is None:
             all_specs = self._store.list()
 
@@ -161,14 +161,14 @@ class LifecycleEngine:
         all_specs: list[Spec] | None = None,
         agent_id: str = "system",
         *,
-        sprints: list[Sprint] | None = None,
+        cycles: list[Cycle] | None = None,
     ) -> list[ConsistencyIssue]:
         """Check lifecycle invariants and auto-correct where safe.
 
         Auto-corrects:
             - Done epic with non-terminal children → reopen to in-progress
         Warns only:
-            - Completed sprint with non-terminal specs
+            - Completed cycle with non-terminal specs
             - Orphaned children (parent not found)
         """
         if all_specs is None:
@@ -180,8 +180,8 @@ class LifecycleEngine:
         # Check 1: Done epics with non-terminal children
         issues.extend(self._check_epic_consistency(all_specs, specs_by_id, agent_id))
 
-        # Check 2: Completed sprints with non-terminal specs
-        issues.extend(self._check_sprint_consistency(all_specs, sprints))
+        # Check 2: Completed cycles with non-terminal specs
+        issues.extend(self._check_cycle_consistency(all_specs, cycles))
 
         # Check 3: Orphaned children
         issues.extend(self._check_orphaned_children(all_specs, specs_by_id))
@@ -256,22 +256,22 @@ class LifecycleEngine:
             self._store.update(parent_id, agent_id=agent_id, status="in-progress")
             logger.info("{} reopened (new child added)", parent_id)
 
-    def _guard_sprint(
-        self, sprint_name: str, all_specs: list[Spec], reopen: bool
+    def _guard_cycle(
+        self, cycle_name: str, all_specs: list[Spec], reopen: bool
     ) -> None:
-        """Check if sprint is complete; raise if so and reopen not set."""
-        sprint_specs = [s for s in all_specs if s.meta.sprint == sprint_name]
-        if not sprint_specs:
-            return  # Empty or unknown sprint — no guard
+        """Check if cycle is complete; raise if so and reopen not set."""
+        cycle_specs = [s for s in all_specs if s.meta.cycle == cycle_name]
+        if not cycle_specs:
+            return  # Empty or unknown cycle — no guard
 
-        all_terminal = all(s.meta.status in _TERMINAL_STATUSES for s in sprint_specs)
+        all_terminal = all(s.meta.status in _TERMINAL_STATUSES for s in cycle_specs)
         if not all_terminal:
             return
 
         if not reopen:
             raise LifecycleError(
-                f"Sprint '{sprint_name}' is complete. "
-                "Assign to a different sprint or use --reopen to reactivate it.",
+                f"Cycle '{cycle_name}' is complete. "
+                "Assign to a different cycle or use --reopen to reactivate it.",
                 spec_id=None,
             )
 
@@ -352,46 +352,44 @@ class LifecycleEngine:
 
         return issues
 
-    def _check_sprint_consistency(
+    def _check_cycle_consistency(
         self,
         all_specs: list[Spec],
-        sprints: list[Sprint] | None,
+        cycles: list[Cycle] | None,
     ) -> list[ConsistencyIssue]:
-        """Detect completed sprints with non-terminal specs."""
+        """Detect completed cycles with non-terminal specs."""
         issues: list[ConsistencyIssue] = []
 
-        # Group specs by sprint
-        by_sprint: dict[str, list[Spec]] = {}
+        # Group specs by cycle
+        by_cycle: dict[str, list[Spec]] = {}
         for spec in all_specs:
-            if spec.meta.sprint:
-                by_sprint.setdefault(spec.meta.sprint, []).append(spec)
+            if spec.meta.cycle:
+                by_cycle.setdefault(spec.meta.cycle, []).append(spec)
 
-        for sprint_name, sprint_specs in by_sprint.items():
-            terminal = [s for s in sprint_specs if s.meta.status in _TERMINAL_STATUSES]
+        for cycle_name, cycle_specs in by_cycle.items():
+            terminal = [s for s in cycle_specs if s.meta.status in _TERMINAL_STATUSES]
             non_terminal = [
-                s for s in sprint_specs if s.meta.status not in _TERMINAL_STATUSES
+                s for s in cycle_specs if s.meta.status not in _TERMINAL_STATUSES
             ]
 
-            # Only flag if there's a mix AND the sprint has an end date that's passed
+            # Only flag if there's a mix AND the cycle has an end date that's passed
             if not terminal or not non_terminal:
                 continue
 
-            # If we have sprint definitions, check if the sprint has ended
-            if sprints:
-                sprint_def = next(
-                    (sp for sp in sprints if sp.name == sprint_name), None
-                )
-                if sprint_def is None:
-                    continue  # Unknown sprint — skip
+            # If we have cycle definitions, check if the cycle has ended
+            if cycles:
+                cycle_def = next((sp for sp in cycles if sp.name == cycle_name), None)
+                if cycle_def is None:
+                    continue  # Unknown cycle — skip
 
             non_terminal_ids = ", ".join(s.meta.id for s in non_terminal)
-            msg = f"Sprint '{sprint_name}' has non-terminal specs: {non_terminal_ids}"
+            msg = f"Cycle '{cycle_name}' has non-terminal specs: {non_terminal_ids}"
             logger.warning(msg)
 
             issues.append(
                 ConsistencyIssue(
-                    type="sprint_complete_with_active",
-                    spec_id=sprint_name,
+                    type="cycle_complete_with_active",
+                    spec_id=cycle_name,
                     message=msg,
                     auto_corrected=False,
                 )
@@ -472,29 +470,29 @@ def _parent_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
     return f"{done_count}/{len(siblings)} stories in {parent_id} done"
 
 
-def _sprint_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
-    """Build sprint progress string like '6/10 specs in Sprint 1 done'."""
-    if not spec.meta.sprint:
+def _cycle_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
+    """Build cycle progress string like '6/10 specs in Cycle 1 done'."""
+    if not spec.meta.cycle:
         return None
 
-    sprint_specs = [s for s in all_specs if s.meta.sprint == spec.meta.sprint]
-    if not sprint_specs:
+    cycle_specs = [s for s in all_specs if s.meta.cycle == spec.meta.cycle]
+    if not cycle_specs:
         return None
 
-    done_count = sum(1 for s in sprint_specs if s.meta.status in _TERMINAL_STATUSES)
-    return f"{done_count}/{len(sprint_specs)} specs in {spec.meta.sprint} done"
+    done_count = sum(1 for s in cycle_specs if s.meta.status in _TERMINAL_STATUSES)
+    return f"{done_count}/{len(cycle_specs)} specs in {spec.meta.cycle} done"
 
 
-def _sprint_complete(spec: Spec, all_specs: list[Spec]) -> bool:
-    """True if all specs in the spec's sprint are terminal."""
-    if not spec.meta.sprint:
+def _cycle_complete(spec: Spec, all_specs: list[Spec]) -> bool:
+    """True if all specs in the spec's cycle are terminal."""
+    if not spec.meta.cycle:
         return False
 
-    sprint_specs = [s for s in all_specs if s.meta.sprint == spec.meta.sprint]
-    if not sprint_specs:
+    cycle_specs = [s for s in all_specs if s.meta.cycle == spec.meta.cycle]
+    if not cycle_specs:
         return False
 
-    return all(s.meta.status in _TERMINAL_STATUSES for s in sprint_specs)
+    return all(s.meta.status in _TERMINAL_STATUSES for s in cycle_specs)
 
 
 def _newly_unblocked(spec_id: str, graph: SpecGraph) -> list[SpecId]:

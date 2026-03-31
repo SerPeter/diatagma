@@ -1,6 +1,6 @@
 """Append-only changelog for spec mutations.
 
-Writes structured, diff-friendly entries to .tasks/changelog.md.
+Writes structured, diff-friendly entries to .specs/changelog.md.
 One line per change, grouped by date. Git-friendly, grep-friendly.
 
 Format:

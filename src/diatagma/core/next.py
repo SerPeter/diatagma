@@ -5,7 +5,7 @@ filtering into a single deterministic query. This is the highest-value
 entry point for both agents and humans.
 
 Key function:
-    get_next(store, graph, *, n, include_claimed, tags, type, sprint, ...)
+    get_next(store, graph, *, n, include_claimed, tags, type, cycle, ...)
         → list[Spec]
 """
 
@@ -48,7 +48,7 @@ def get_next(
     include_claimed: bool = False,
     tags: list[str] | None = None,
     type: str | None = None,
-    sprint: str | None = None,
+    cycle: str | None = None,
     config: PriorityConfig | None = None,
     today: date | None = None,
 ) -> list[Spec]:
@@ -65,7 +65,7 @@ def get_next(
             non-empty assignee.
         tags: Only include specs matching at least one of these tags.
         type: Only include specs of this type.
-        sprint: Only include specs in this sprint.
+        cycle: Only include specs in this cycle.
         config: Priority scoring configuration.
         today: Reference date for priority scoring.
 
@@ -75,11 +75,11 @@ def get_next(
         involved in circular dependencies.
     """
     # 1. Detect and exclude circular dependency participants
-    cycles = graph.detect_cycles()
+    dep_cycles = graph.detect_cycles()
     cycle_ids: set[str] = set()
-    if cycles:
-        for cycle in cycles:
-            cycle_ids.update(cycle)
+    if dep_cycles:
+        for dep_cycle in dep_cycles:
+            cycle_ids.update(dep_cycle)
         logger.warning(
             "circular dependencies detected, excluding {} specs: {}",
             len(cycle_ids),
@@ -113,7 +113,7 @@ def get_next(
         if tags is not None and not (set(tags) & set(spec.meta.tags)):
             continue
 
-        if sprint is not None and spec.meta.sprint != sprint:
+        if cycle is not None and spec.meta.cycle != cycle:
             continue
 
         candidates.append(spec)

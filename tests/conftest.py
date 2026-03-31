@@ -1,13 +1,13 @@
 """Shared test fixtures.
 
 Provides:
-    tmp_tasks_dir      — a temporary .tasks/ directory with config and sample specs
+    tmp_specs_dir      — a temporary .specs/ directory with config and sample specs
     sample_meta_dict   — a raw dict simulating parsed YAML frontmatter
     sample_spec        — a parsed Spec object for unit tests
     sample_spec_text   — a complete markdown string with frontmatter + body
     minimal_spec_text  — frontmatter only, no body
     spec_with_extras   — includes unknown sections
-    spec_store         — a SpecStore pointed at tmp_tasks_dir
+    spec_store         — a SpecStore pointed at tmp_specs_dir
 """
 
 from collections.abc import Generator
@@ -22,15 +22,15 @@ from diatagma.core.store import SpecStore
 
 
 @pytest.fixture
-def tmp_tasks_dir(tmp_path):
-    """Create a minimal .tasks/ directory structure for testing."""
-    tasks_dir = tmp_path / ".tasks"
-    tasks_dir.mkdir()
-    (tasks_dir / "config").mkdir()
-    (tasks_dir / "backlog").mkdir()
-    (tasks_dir / "archive").mkdir()
-    (tasks_dir / ".cache").mkdir()
-    return tasks_dir
+def tmp_specs_dir(tmp_path):
+    """Create a minimal .specs/ directory structure for testing."""
+    specs_dir = tmp_path / ".specs"
+    specs_dir.mkdir()
+    (specs_dir / "config").mkdir()
+    (specs_dir / "backlog").mkdir()
+    (specs_dir / "archive").mkdir()
+    (specs_dir / ".cache").mkdir()
+    return specs_dir
 
 
 @pytest.fixture
@@ -274,17 +274,17 @@ def sample_templates() -> dict[str, str]:
 
 
 @pytest.fixture
-def spec_store(tmp_tasks_dir, sample_prefixes, sample_templates) -> SpecStore:
-    """A SpecStore pointed at a temporary .tasks/ directory."""
+def spec_store(tmp_specs_dir, sample_prefixes, sample_templates) -> SpecStore:
+    """A SpecStore pointed at a temporary .specs/ directory."""
     return SpecStore(
-        tasks_dir=tmp_tasks_dir,
+        specs_dir=tmp_specs_dir,
         prefixes=sample_prefixes,
         templates=sample_templates,
     )
 
 
 def seed_spec_file(
-    tasks_dir,
+    specs_dir,
     spec_id: str,
     title: str,
     spec_type: str = "feature",
@@ -296,7 +296,7 @@ def seed_spec_file(
     ext = ext_map.get(spec_type, ".story.md")
     slug = title.lower().replace(" ", "-")[:40]
     filename = f"{spec_id}-{slug}{ext}"
-    path = tasks_dir / filename
+    path = specs_dir / filename
 
     meta = SpecMeta.model_validate(
         {
@@ -322,9 +322,9 @@ def seed_spec_file(
 
 
 @pytest.fixture
-def spec_cache(tmp_tasks_dir) -> Generator[SpecCache]:
+def spec_cache(tmp_specs_dir) -> Generator[SpecCache]:
     """A SpecCache pointed at the tmp .cache/ directory."""
-    cache_dir = tmp_tasks_dir / ".cache"
+    cache_dir = tmp_specs_dir / ".cache"
     cache = SpecCache(cache_dir)
     yield cache
     cache.close()

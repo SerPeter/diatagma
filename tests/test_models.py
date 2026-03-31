@@ -22,7 +22,7 @@ from diatagma.core.models import (
     SpecBody,
     SpecLinks,
     SpecMeta,
-    Sprint,
+    Cycle,
 )
 
 # ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ class TestSpecMeta:
             tags=["backend", "urgent"],
             business_value=500,
             story_points=8,
-            sprint="Sprint 1",
+            cycle="Cycle 1",
             assignee="alice",
             due_date=date(2026, 4, 15),
             links=SpecLinks(
@@ -391,14 +391,14 @@ class TestDueDateUrgency:
         assert u.warning_bonus == 50.0
 
 
-class TestSprint:
+class TestCycle:
     def test_construction(self):
-        s = Sprint(name="Sprint 1", start=date(2026, 3, 24), end=date(2026, 4, 7))
+        s = Cycle(name="Cycle 1", start=date(2026, 3, 24), end=date(2026, 4, 7))
         assert s.goal == ""
 
     def test_with_goal(self):
-        s = Sprint(
-            name="Sprint 1",
+        s = Cycle(
+            name="Cycle 1",
             start=date(2026, 3, 24),
             end=date(2026, 4, 7),
             goal="Core models",

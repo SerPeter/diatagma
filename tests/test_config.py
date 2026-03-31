@@ -13,7 +13,7 @@ from diatagma.core.config import (
     _load_priority,
     _load_schema,
     _load_settings,
-    _load_sprints,
+    _load_cycles,
     _load_templates,
     _load_yaml,
 )
@@ -23,7 +23,7 @@ from diatagma.core.models import (
     PriorityConfig,
     SchemaConfig,
     Settings,
-    Sprint,
+    Cycle,
 )
 
 
@@ -223,48 +223,48 @@ class TestLoadPriority:
 
 
 # ---------------------------------------------------------------------------
-# TestLoadSprints
+# TestLoadCycles
 # ---------------------------------------------------------------------------
 
 
-class TestLoadSprints:
-    """Tests for _load_sprints()."""
+class TestLoadCycles:
+    """Tests for _load_cycles()."""
 
-    def test_loads_sprints(self, tmp_path: Path) -> None:
+    def test_loads_cycles(self, tmp_path: Path) -> None:
         _write(
-            tmp_path / "sprints.yaml",
-            "sprints:\n"
-            '  - name: "Sprint 1"\n'
+            tmp_path / "cycles.yaml",
+            "cycles:\n"
+            '  - name: "Cycle 1"\n'
             "    start: 2026-03-24\n"
             "    end: 2026-04-07\n"
             '    goal: "Core library"\n',
         )
-        sprints = _load_sprints(tmp_path)
-        assert len(sprints) == 1
-        assert isinstance(sprints[0], Sprint)
-        assert sprints[0].name == "Sprint 1"
-        assert sprints[0].start == date(2026, 3, 24)
-        assert sprints[0].end == date(2026, 4, 7)
-        assert sprints[0].goal == "Core library"
+        cycles = _load_cycles(tmp_path)
+        assert len(cycles) == 1
+        assert isinstance(cycles[0], Cycle)
+        assert cycles[0].name == "Cycle 1"
+        assert cycles[0].start == date(2026, 3, 24)
+        assert cycles[0].end == date(2026, 4, 7)
+        assert cycles[0].goal == "Core library"
 
     def test_missing_returns_empty(self, tmp_path: Path) -> None:
-        assert _load_sprints(tmp_path) == []
+        assert _load_cycles(tmp_path) == []
 
     def test_comments_only_returns_empty(self, tmp_path: Path) -> None:
         _write(
-            tmp_path / "sprints.yaml",
-            "# sprints:\n#   - name: Sprint 1\n",
+            tmp_path / "cycles.yaml",
+            "# cycles:\n#   - name: Cycle 1\n",
         )
-        assert _load_sprints(tmp_path) == []
+        assert _load_cycles(tmp_path) == []
 
-    def test_no_sprints_key_returns_empty(self, tmp_path: Path) -> None:
-        _write(tmp_path / "sprints.yaml", "other_key: value\n")
-        assert _load_sprints(tmp_path) == []
+    def test_no_cycles_key_returns_empty(self, tmp_path: Path) -> None:
+        _write(tmp_path / "cycles.yaml", "other_key: value\n")
+        assert _load_cycles(tmp_path) == []
 
-    def test_multiple_sprints(self, tmp_path: Path) -> None:
+    def test_multiple_cycles(self, tmp_path: Path) -> None:
         _write(
-            tmp_path / "sprints.yaml",
-            "sprints:\n"
+            tmp_path / "cycles.yaml",
+            "cycles:\n"
             '  - name: "S1"\n'
             "    start: 2026-03-24\n"
             "    end: 2026-04-07\n"
@@ -272,20 +272,20 @@ class TestLoadSprints:
             "    start: 2026-04-07\n"
             "    end: 2026-04-21\n",
         )
-        sprints = _load_sprints(tmp_path)
-        assert len(sprints) == 2
-        assert sprints[1].name == "S2"
+        cycles = _load_cycles(tmp_path)
+        assert len(cycles) == 2
+        assert cycles[1].name == "S2"
 
-    def test_invalid_sprint_raises(self, tmp_path: Path) -> None:
+    def test_invalid_cycle_raises(self, tmp_path: Path) -> None:
         _write(
-            tmp_path / "sprints.yaml",
-            "sprints:\n"
-            '  - name: "Bad Sprint"\n'
+            tmp_path / "cycles.yaml",
+            "cycles:\n"
+            '  - name: "Bad Cycle"\n'
             "    start: not-a-date\n"
             "    end: 2026-04-07\n",
         )
-        with pytest.raises(ConfigError, match="invalid sprints.yaml"):
-            _load_sprints(tmp_path)
+        with pytest.raises(ConfigError, match="invalid cycles.yaml"):
+            _load_cycles(tmp_path)
 
 
 # ---------------------------------------------------------------------------
@@ -410,8 +410,8 @@ class TestDiatagmaConfig:
             "weights:\n  business_value: 3.0\n",
         )
         _write(
-            config_dir / "sprints.yaml",
-            'sprints:\n  - name: "S1"\n    start: 2026-03-24\n    end: 2026-04-07\n',
+            config_dir / "cycles.yaml",
+            'cycles:\n  - name: "S1"\n    start: 2026-03-24\n    end: 2026-04-07\n',
         )
         _write(
             config_dir / "hooks.yaml",
@@ -423,12 +423,12 @@ class TestDiatagmaConfig:
 
         cfg = DiatagmaConfig(tmp_path)
 
-        assert cfg.tasks_dir == tmp_path
+        assert cfg.specs_dir == tmp_path
         assert cfg.settings.web_port == 9999
         assert "DIA" in cfg.prefixes
         assert "id" in cfg.schema.required_fields
         assert cfg.priority.weights.business_value == 3.0
-        assert len(cfg.sprints) == 1
+        assert len(cfg.cycles) == 1
         assert len(cfg.hooks.on_create) == 1
         assert "story" in cfg.templates
 
@@ -440,7 +440,7 @@ class TestDiatagmaConfig:
         assert cfg.prefixes == {}
         assert cfg.schema == SchemaConfig()
         assert cfg.priority == PriorityConfig()
-        assert cfg.sprints == []
+        assert cfg.cycles == []
         assert cfg.hooks == HooksConfig()
         assert cfg.templates == {}
 
@@ -453,7 +453,7 @@ class TestDiatagmaConfig:
         cfg = DiatagmaConfig(tmp_path)
         assert cfg.settings.web_port == 7777
         assert cfg.prefixes == {}
-        assert cfg.sprints == []
+        assert cfg.cycles == []
 
     def test_malformed_yaml_propagates(self, tmp_path: Path) -> None:
         config_dir = tmp_path / "config"
@@ -464,12 +464,12 @@ class TestDiatagmaConfig:
             DiatagmaConfig(tmp_path)
 
     def test_loads_real_config(self) -> None:
-        """Smoke test: load the actual .tasks/ config from this repo."""
-        tasks_dir = Path(__file__).resolve().parent.parent / ".tasks"
-        if not (tasks_dir / "config").exists():
-            pytest.skip("repo .tasks/config not available")
+        """Smoke test: load the actual .specs/ config from this repo."""
+        specs_dir = Path(__file__).resolve().parent.parent / ".specs"
+        if not (specs_dir / "config").exists():
+            pytest.skip("repo .specs/config not available")
 
-        cfg = DiatagmaConfig(tasks_dir)
+        cfg = DiatagmaConfig(specs_dir)
         assert cfg.settings.web_port == 8742
         assert "DIA" in cfg.prefixes
         assert cfg.prefixes["DIA"].template == "story"

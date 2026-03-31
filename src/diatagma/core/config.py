@@ -1,16 +1,16 @@
-"""Load and merge configuration from .tasks/config/.
+"""Load and merge configuration from .specs/config/.
 
 Reads settings.yaml, prefixes.yaml, schema.yaml, priority.yaml,
-sprints.yaml, and hooks.yaml. Provides typed access via Pydantic
+cycles.yaml, and hooks.yaml. Provides typed access via Pydantic
 settings models.
 
 Key class:
-    DiatagmaConfig(tasks_dir: Path)
+    DiatagmaConfig(specs_dir: Path)
         .settings   → Settings
         .prefixes   → dict[str, PrefixDef]
         .schema     → SchemaConfig
         .priority   → PriorityConfig
-        .sprints    → list[Sprint]
+        .cycles     → list[Cycle]
         .hooks      → HooksConfig
         .templates  → dict[str, str]  (spec_type → template content)
 """
@@ -29,7 +29,7 @@ from diatagma.core.models import (
     PriorityConfig,
     SchemaConfig,
     Settings,
-    Sprint,
+    Cycle,
 )
 
 
@@ -118,18 +118,18 @@ def _load_priority(config_dir: Path) -> PriorityConfig:
         raise ConfigError(f"invalid priority.yaml: {exc}") from exc
 
 
-def _load_sprints(config_dir: Path) -> list[Sprint]:
-    """Load sprints.yaml, returning [] if missing or empty."""
-    data = _load_yaml(config_dir / "sprints.yaml")
+def _load_cycles(config_dir: Path) -> list[Cycle]:
+    """Load cycles.yaml, returning [] if missing or empty."""
+    data = _load_yaml(config_dir / "cycles.yaml")
     if data is None or not isinstance(data, dict):
         return []
-    raw_list = data.get("sprints")
+    raw_list = data.get("cycles")
     if not isinstance(raw_list, list):
         return []
     try:
-        return [Sprint.model_validate(item) for item in raw_list]
+        return [Cycle.model_validate(item) for item in raw_list]
     except ValidationError as exc:
-        raise ConfigError(f"invalid sprints.yaml: {exc}") from exc
+        raise ConfigError(f"invalid cycles.yaml: {exc}") from exc
 
 
 def _load_hooks(config_dir: Path) -> HooksConfig:
@@ -165,26 +165,26 @@ def _load_templates(config_dir: Path) -> dict[str, str]:
 class DiatagmaConfig:
     """Top-level configuration container.
 
-    Loads all YAML config files and templates from ``tasks_dir/config/``
+    Loads all YAML config files and templates from ``specs_dir/config/``
     eagerly on construction. Missing files produce defaults; malformed
     files raise ConfigError.
     """
 
-    def __init__(self, tasks_dir: Path) -> None:
-        self._tasks_dir = Path(tasks_dir)
-        config_dir = self._tasks_dir / "config"
+    def __init__(self, specs_dir: Path) -> None:
+        self._specs_dir = Path(specs_dir)
+        config_dir = self._specs_dir / "config"
 
         self._settings = _load_settings(config_dir)
         self._prefixes = _load_prefixes(config_dir)
         self._schema = _load_schema(config_dir)
         self._priority = _load_priority(config_dir)
-        self._sprints = _load_sprints(config_dir)
+        self._cycles = _load_cycles(config_dir)
         self._hooks = _load_hooks(config_dir)
         self._templates = _load_templates(config_dir)
 
     @property
-    def tasks_dir(self) -> Path:
-        return self._tasks_dir
+    def specs_dir(self) -> Path:
+        return self._specs_dir
 
     @property
     def settings(self) -> Settings:
@@ -203,8 +203,8 @@ class DiatagmaConfig:
         return self._priority
 
     @property
-    def sprints(self) -> list[Sprint]:
-        return self._sprints
+    def cycles(self) -> list[Cycle]:
+        return self._cycles
 
     @property
     def hooks(self) -> HooksConfig:

@@ -15,7 +15,7 @@ links:
 
 ## Description
 
-Build a file watcher that detects changes to spec files in `.tasks/` and triggers cache invalidation and optional notifications.
+Build a file watcher that detects changes to spec files in `.specs/` and triggers cache invalidation and optional notifications.
 
 ## Context
 
@@ -32,13 +32,13 @@ Both the MCP server and web dashboard need to reflect external file changes. Wit
 ### Scenario: New spec file created
 
 - **Given** the file watcher is running
-- **When** a new file DIA-030.story.md is created in `.tasks/`
+- **When** a new file DIA-030.story.md is created in `.specs/`
 - **Then** the file is parsed and added to the cache, and connected clients are notified
 
 ### Scenario: Spec file deleted
 
 - **Given** the file watcher is running and DIA-005.story.md exists
-- **When** the file is deleted from `.tasks/`
+- **When** the file is deleted from `.specs/`
 - **Then** the cache entry is removed and connected clients are notified
 
 ### Scenario: Batch changes (e.g., git checkout)
@@ -52,12 +52,12 @@ Both the MCP server and web dashboard need to reflect external file changes. Wit
 - Must use `watchfiles` (Rust-based, cross-platform) — not `watchdog` (slower, more platform issues)
 - Debounce window: 500ms (configurable) to handle batch operations
 - Watcher runs as optional background thread, not a separate process
-- Must handle `.tasks/` subdirectories (backlog/, archive/)
-- Must not watch `.tasks/.cache/` (would cause feedback loops)
+- Must handle `.specs/` subdirectories (backlog/, archive/)
+- Must not watch `.specs/.cache/` (would cause feedback loops)
 
 ## Requirements
 
-- [ ] `SpecWatcher` class that monitors `.tasks/` recursively for `.md` file changes
+- [ ] `SpecWatcher` class that monitors `.specs/` recursively for `.md` file changes
 - [ ] Debounced change batching (500ms default window)
 - [ ] Cache invalidation callback: invalidate specific entries or trigger full rebuild
 - [ ] WebSocket notification callback: push change events to connected dashboard clients

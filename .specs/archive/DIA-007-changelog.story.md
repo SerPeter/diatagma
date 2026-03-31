@@ -15,7 +15,7 @@ links:
 
 ## Description
 
-Build the changelog module that records all task mutations as structured, append-only entries in .tasks/changelog.md.
+Build the changelog module that records all task mutations as structured, append-only entries in .specs/changelog.md.
 
 ## Context
 

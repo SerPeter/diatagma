@@ -1,6 +1,6 @@
 ---
 id: DIA-008
-title: "Implement configuration loader from .tasks/config/"
+title: "Implement configuration loader from .specs/config/"
 status: done
 type: feature
 tags: [core, config]
@@ -15,15 +15,15 @@ links:
 
 ## Description
 
-Build the config module that loads and validates all YAML configuration files from .tasks/config/ into typed Pydantic models.
+Build the config module that loads and validates all YAML configuration files from .specs/config/ into typed Pydantic models.
 
 ## Context
 
-Configuration drives behavior across the tool — statuses, prefixes, templates, priority weights, sprint boundaries. It must be loaded once and shared by both MCP and web.
+Configuration drives behavior across the tool — statuses, prefixes, templates, priority weights, cycle boundaries. It must be loaded once and shared by both MCP and web.
 
 ## Requirements
 
-- [ ] Load settings.yaml, prefixes.yaml, schema.yaml, priority.yaml, sprints.yaml, hooks.yaml
+- [ ] Load settings.yaml, prefixes.yaml, schema.yaml, priority.yaml, cycles.yaml, hooks.yaml
 - [ ] Load templates from config/templates/*.md
 - [ ] Typed access via `DiatagmaConfig` class
 - [ ] Sensible defaults when config files are missing

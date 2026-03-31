@@ -16,7 +16,7 @@ Key models:
     SpecMeta     — frontmatter fields (id, title, status, type, tags, parent, etc.)
     SpecBody     — parsed markdown sections (description, context, behavior, etc.)
     Spec         — SpecMeta + SpecBody + file path
-    Settings     — loaded from .tasks/config/settings.yaml
+    Settings     — loaded from .specs/config/settings.yaml
     PrefixDef    — prefix definition from prefixes.yaml
 """
 
@@ -83,7 +83,7 @@ class SpecMeta(BaseModel):
     tags: list[str] = Field(default_factory=list)
     business_value: Annotated[int, Field(ge=-1000, le=1000)] | None = None
     story_points: Literal[1, 2, 3, 5, 8, 13, 21] | None = None
-    sprint: str | None = None
+    cycle: str | None = None
     assignee: str | None = None
     due_date: date | None = None
     links: SpecLinks = Field(default_factory=SpecLinks)
@@ -179,8 +179,8 @@ class PriorityConfig(BaseModel):
     weights: PriorityWeights = Field(default_factory=PriorityWeights)
 
 
-class Sprint(BaseModel):
-    """A sprint boundary definition."""
+class Cycle(BaseModel):
+    """A cycle boundary definition."""
 
     name: str
     start: date
@@ -279,7 +279,7 @@ class SpecFilter(BaseModel):
     prefix: str | None = None
     parent: str | None = None
     assignee: str | None = None
-    sprint: str | None = None
+    cycle: str | None = None
     search: str | None = None
 
     model_config = ConfigDict(frozen=True)
@@ -309,8 +309,8 @@ class CompletionContext(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     parent_progress: str | None = None
-    sprint_progress: str | None = None
-    sprint_complete: bool = False
+    cycle_progress: str | None = None
+    cycle_complete: bool = False
     newly_unblocked: list[SpecId] = Field(default_factory=list)
     next_ready: list[SpecId] = Field(default_factory=list)
     auto_completed_parents: list[SpecId] = Field(default_factory=list)
@@ -368,6 +368,6 @@ __all__ = [
     "SpecId",
     "SpecLinks",
     "SpecMeta",
-    "Sprint",
+    "Cycle",
     "StatusUpdateResult",
 ]

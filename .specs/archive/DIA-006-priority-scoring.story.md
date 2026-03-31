@@ -25,7 +25,7 @@ Agents calling get_next_task() need a single ranked list. Manual business_value 
 
 - [ ] `compute_priority(task, graph, config) → float`
 - [ ] `rank_tasks(tasks, graph, config) → list[Task]` (sorted descending)
-- [ ] Weights loaded from .tasks/config/priority.yaml
+- [ ] Weights loaded from .specs/config/priority.yaml
 - [ ] Factors: business_value, story_points, unblocks_count, age, due_date proximity
 
 ## Acceptance Criteria

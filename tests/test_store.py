@@ -55,18 +55,18 @@ class TestNextId:
     def test_first_id_in_empty_dir(self, spec_store: SpecStore):
         assert spec_store.next_id("DIA") == "DIA-001"
 
-    def test_increments_from_existing(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "First")
-        seed_spec_file(tmp_tasks_dir, "DIA-002", "Second")
+    def test_increments_from_existing(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "First")
+        seed_spec_file(tmp_specs_dir, "DIA-002", "Second")
         assert spec_store.next_id("DIA") == "DIA-003"
 
-    def test_handles_gaps(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "First")
-        seed_spec_file(tmp_tasks_dir, "DIA-005", "Fifth")
+    def test_handles_gaps(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "First")
+        seed_spec_file(tmp_specs_dir, "DIA-005", "Fifth")
         assert spec_store.next_id("DIA") == "DIA-006"
 
-    def test_four_digit_ids(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-999", "Nine ninety nine")
+    def test_four_digit_ids(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-999", "Nine ninety nine")
         assert spec_store.next_id("DIA") == "DIA-1000"
 
     def test_invalid_prefix_raises(self, spec_store: SpecStore):
@@ -74,19 +74,19 @@ class TestNextId:
             spec_store.next_id("NOPE")
 
     def test_multiple_prefixes_independent(
-        self, spec_store: SpecStore, tmp_tasks_dir: Path
+        self, spec_store: SpecStore, tmp_specs_dir: Path
     ):
-        seed_spec_file(tmp_tasks_dir, "DIA-003", "Dia three")
-        seed_spec_file(tmp_tasks_dir, "EX-001", "Ex one", spec_type="spike")
+        seed_spec_file(tmp_specs_dir, "DIA-003", "Dia three")
+        seed_spec_file(tmp_specs_dir, "EX-001", "Ex one", spec_type="spike")
         assert spec_store.next_id("DIA") == "DIA-004"
         assert spec_store.next_id("EX") == "EX-002"
 
     def test_finds_in_backlog_and_archive(
-        self, spec_store: SpecStore, tmp_tasks_dir: Path
+        self, spec_store: SpecStore, tmp_specs_dir: Path
     ):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Active")
-        seed_spec_file(tmp_tasks_dir / "backlog", "DIA-005", "Backlogged")
-        seed_spec_file(tmp_tasks_dir / "archive", "DIA-010", "Archived")
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Active")
+        seed_spec_file(tmp_specs_dir / "backlog", "DIA-005", "Backlogged")
+        seed_spec_file(tmp_specs_dir / "archive", "DIA-010", "Archived")
         assert spec_store.next_id("DIA") == "DIA-011"
 
 
@@ -96,7 +96,7 @@ class TestNextId:
 
 
 class TestCreate:
-    def test_creates_valid_file(self, spec_store: SpecStore, tmp_tasks_dir: Path):
+    def test_creates_valid_file(self, spec_store: SpecStore, tmp_specs_dir: Path):
         spec = spec_store.create("DIA", "My new story")
         assert spec.file_path is not None
         assert spec.file_path.exists()
@@ -153,14 +153,14 @@ class TestCreate:
         assert s2.meta.id == "DIA-002"
         assert s3.meta.id == "DIA-003"
 
-    def test_changelog_called(self, tmp_tasks_dir, sample_prefixes, sample_templates):
+    def test_changelog_called(self, tmp_specs_dir, sample_prefixes, sample_templates):
         mutations: list[dict] = []
 
         def on_mut(spec_id, action, **kwargs):
             mutations.append({"spec_id": spec_id, "action": action, **kwargs})
 
         store = SpecStore(
-            tmp_tasks_dir, sample_prefixes, sample_templates, on_mutation=on_mut
+            tmp_specs_dir, sample_prefixes, sample_templates, on_mutation=on_mut
         )
         store.create("DIA", "Logged spec", agent_id="test-agent")
         assert len(mutations) == 1
@@ -186,19 +186,19 @@ class TestCreate:
 
 
 class TestGet:
-    def test_get_existing(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Test get")
+    def test_get_existing(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Test get")
         spec = spec_store.get("DIA-001")
         assert spec.meta.id == "DIA-001"
         assert spec.meta.title == "Test get"
 
-    def test_get_from_backlog(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir / "backlog", "DIA-042", "In backlog")
+    def test_get_from_backlog(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir / "backlog", "DIA-042", "In backlog")
         spec = spec_store.get("DIA-042")
         assert spec.meta.id == "DIA-042"
 
-    def test_get_from_archive(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir / "archive", "DIA-099", "Archived")
+    def test_get_from_archive(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir / "archive", "DIA-099", "Archived")
         spec = spec_store.get("DIA-099")
         assert spec.meta.id == "DIA-099"
 
@@ -206,8 +206,8 @@ class TestGet:
         with pytest.raises(SpecNotFoundError, match="DIA-999"):
             spec_store.get("DIA-999")
 
-    def test_get_deleted_file_raises(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Ephemeral")
+    def test_get_deleted_file_raises(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Ephemeral")
         spec = spec_store.get("DIA-001")
         assert spec.file_path is not None
         spec.file_path.unlink()
@@ -222,10 +222,10 @@ class TestGet:
 
 class TestList:
     @pytest.fixture(autouse=True)
-    def _seed_specs(self, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Models", tags=["core", "models"])
+    def _seed_specs(self, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Models", tags=["core", "models"])
         seed_spec_file(
-            tmp_tasks_dir,
+            tmp_specs_dir,
             "DIA-002",
             "Parser",
             status="in-progress",
@@ -233,7 +233,7 @@ class TestList:
             assignee="alice",
         )
         seed_spec_file(
-            tmp_tasks_dir,
+            tmp_specs_dir,
             "DIA-003",
             "Store",
             tags=["core", "store"],
@@ -241,13 +241,13 @@ class TestList:
             parent="DIA-011",
         )
         seed_spec_file(
-            tmp_tasks_dir,
+            tmp_specs_dir,
             "DIA-011",
             "Core epic",
             spec_type="epic",
         )
         seed_spec_file(
-            tmp_tasks_dir / "backlog",
+            tmp_specs_dir / "backlog",
             "DIA-050",
             "Backlogged item",
         )
@@ -334,9 +334,9 @@ class TestList:
         )
         assert store.list() == []
 
-    def test_skips_non_spec_files(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        (tmp_tasks_dir / "ROADMAP.md").write_text("# Roadmap", encoding="utf-8")
-        (tmp_tasks_dir / "changelog.md").write_text("# Changelog", encoding="utf-8")
+    def test_skips_non_spec_files(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        (tmp_specs_dir / "ROADMAP.md").write_text("# Roadmap", encoding="utf-8")
+        (tmp_specs_dir / "changelog.md").write_text("# Changelog", encoding="utf-8")
         specs = spec_store.list()
         ids = {s.meta.id for s in specs}
         assert "ROADMAP" not in ids
@@ -349,31 +349,31 @@ class TestList:
 
 
 class TestUpdate:
-    def test_update_meta_field(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Updatable")
+    def test_update_meta_field(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Updatable")
         spec = spec_store.update("DIA-001", status="in-progress")
         assert spec.meta.status == "in-progress"
         # Verify on disk
         reloaded = spec_store.get("DIA-001")
         assert reloaded.meta.status == "in-progress"
 
-    def test_update_sets_updated_date(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Track date")
+    def test_update_sets_updated_date(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Track date")
         spec = spec_store.update("DIA-001", status="done")
         assert spec.meta.updated == date.today()
 
     def test_update_preserves_body_on_meta_only(
-        self, spec_store: SpecStore, tmp_tasks_dir: Path
+        self, spec_store: SpecStore, tmp_specs_dir: Path
     ):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Body preserved")
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Body preserved")
         original = spec_store.get("DIA-001")
         original_desc = original.body.description
 
         updated = spec_store.update("DIA-001", status="in-progress")
         assert updated.body.description == original_desc
 
-    def test_update_body_field(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Body change")
+    def test_update_body_field(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Body change")
         spec = spec_store.update("DIA-001", description="New description.")
         assert spec.body.description == "New description."
         # raw_body should be cleared
@@ -387,9 +387,9 @@ class TestUpdate:
             spec_store.update("DIA-999", status="done")
 
     def test_changelog_called_per_field(
-        self, tmp_tasks_dir, sample_prefixes, sample_templates
+        self, tmp_specs_dir, sample_prefixes, sample_templates
     ):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Log test")
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Log test")
 
         mutations: list[dict] = []
 
@@ -397,7 +397,7 @@ class TestUpdate:
             mutations.append({"spec_id": spec_id, "action": action, **kwargs})
 
         store = SpecStore(
-            tmp_tasks_dir, sample_prefixes, sample_templates, on_mutation=on_mut
+            tmp_specs_dir, sample_prefixes, sample_templates, on_mutation=on_mut
         )
         store.update("DIA-001", status="done", assignee="bob", agent_id="test")
 
@@ -409,9 +409,9 @@ class TestUpdate:
         assert "assignee" in fields_logged
 
     def test_update_multiple_meta_fields(
-        self, spec_store: SpecStore, tmp_tasks_dir: Path
+        self, spec_store: SpecStore, tmp_specs_dir: Path
     ):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Multi update")
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Multi update")
         spec = spec_store.update(
             "DIA-001", status="in-progress", assignee="alice", business_value=100
         )
@@ -426,26 +426,26 @@ class TestUpdate:
 
 
 class TestMove:
-    def test_move_to_backlog(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Move me")
+    def test_move_to_backlog(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Move me")
         spec = spec_store.move_to_backlog("DIA-001")
         assert spec.file_path is not None
         assert "backlog" in str(spec.file_path)
         # Original gone
-        assert not list(tmp_tasks_dir.glob("DIA-001-*.md"))
+        assert not list(tmp_specs_dir.glob("DIA-001-*.md"))
         # In backlog
-        assert list((tmp_tasks_dir / "backlog").glob("DIA-001-*.md"))
+        assert list((tmp_specs_dir / "backlog").glob("DIA-001-*.md"))
 
-    def test_move_to_archive(self, spec_store: SpecStore, tmp_tasks_dir: Path):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Archive me")
+    def test_move_to_archive(self, spec_store: SpecStore, tmp_specs_dir: Path):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Archive me")
         spec = spec_store.move_to_archive("DIA-001")
         assert spec.file_path is not None
         assert "archive" in str(spec.file_path)
-        assert list((tmp_tasks_dir / "archive").glob("DIA-001-*.md"))
+        assert list((tmp_specs_dir / "archive").glob("DIA-001-*.md"))
 
-    def test_move_preserves_content(self, spec_store: SpecStore, tmp_tasks_dir: Path):
+    def test_move_preserves_content(self, spec_store: SpecStore, tmp_specs_dir: Path):
         seed_spec_file(
-            tmp_tasks_dir,
+            tmp_specs_dir,
             "DIA-001",
             "Preserved",
             status="in-progress",
@@ -463,8 +463,8 @@ class TestMove:
         with pytest.raises(SpecNotFoundError):
             spec_store.move_to_backlog("DIA-999")
 
-    def test_changelog_called(self, tmp_tasks_dir, sample_prefixes, sample_templates):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Log move")
+    def test_changelog_called(self, tmp_specs_dir, sample_prefixes, sample_templates):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Log move")
 
         mutations: list[dict] = []
 
@@ -472,7 +472,7 @@ class TestMove:
             mutations.append({"spec_id": spec_id, "action": action, **kwargs})
 
         store = SpecStore(
-            tmp_tasks_dir, sample_prefixes, sample_templates, on_mutation=on_mut
+            tmp_specs_dir, sample_prefixes, sample_templates, on_mutation=on_mut
         )
         store.move_to_archive("DIA-001", agent_id="bot")
         assert len(mutations) == 1
@@ -486,8 +486,8 @@ class TestMove:
 
 
 class TestConcurrency:
-    def test_concurrent_creates(self, tmp_tasks_dir, sample_prefixes, sample_templates):
-        store = SpecStore(tmp_tasks_dir, sample_prefixes, sample_templates)
+    def test_concurrent_creates(self, tmp_specs_dir, sample_prefixes, sample_templates):
+        store = SpecStore(tmp_specs_dir, sample_prefixes, sample_templates)
 
         def create_spec(i: int):
             return store.create("DIA", f"Concurrent spec {i}")
@@ -502,9 +502,9 @@ class TestConcurrency:
             assert spec.file_path is not None
             assert spec.file_path.exists()
 
-    def test_concurrent_updates(self, tmp_tasks_dir, sample_prefixes, sample_templates):
-        seed_spec_file(tmp_tasks_dir, "DIA-001", "Concurrent target")
-        store = SpecStore(tmp_tasks_dir, sample_prefixes, sample_templates)
+    def test_concurrent_updates(self, tmp_specs_dir, sample_prefixes, sample_templates):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Concurrent target")
+        store = SpecStore(tmp_specs_dir, sample_prefixes, sample_templates)
 
         statuses = ["pending", "in-progress", "in-review", "done", "cancelled"]
 

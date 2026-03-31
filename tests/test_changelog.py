@@ -365,7 +365,7 @@ class TestRoundTrip:
         assert entries[3].action == "moved to archive"
 
     def test_reads_existing_changelog(self, tmp_path: Path) -> None:
-        """Can read the format used in the real .tasks/changelog.md."""
+        """Can read the format used in the real .specs/changelog.md."""
         f = tmp_path / "changelog.md"
         f.write_text(
             "# Changelog\n\n"

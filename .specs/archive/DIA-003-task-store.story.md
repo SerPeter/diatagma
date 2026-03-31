@@ -15,7 +15,7 @@ links:
 
 ## Description
 
-Build the TaskStore class that provides CRUD operations over the .tasks/ directory, using the parser for file I/O.
+Build the TaskStore class that provides CRUD operations over the .specs/ directory, using the parser for file I/O.
 
 ## Context
 

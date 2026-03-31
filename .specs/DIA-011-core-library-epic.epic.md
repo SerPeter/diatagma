@@ -33,7 +33,7 @@ Core owns models, parsing, CRUD, caching, dependency resolution, priority scorin
 - [ ] DIA-015: "Get ready specs" deterministic query
 - [ ] DIA-018: File watcher for live updates
 - [ ] DIA-019: Archive with context summaries
-- [ ] DIA-021: Lifecycle automation (auto-complete, completion metadata, sprint archival)
+- [ ] DIA-021: Lifecycle automation (auto-complete, completion metadata, cycle archival)
 
 ## Verification
 

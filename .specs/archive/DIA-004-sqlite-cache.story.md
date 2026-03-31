@@ -15,7 +15,7 @@ links:
 
 ## Description
 
-Build a SQLite-backed read cache at .tasks/.cache/tasks.db that accelerates listing, filtering, and sorting.
+Build a SQLite-backed read cache at .specs/.cache/tasks.db that accelerates listing, filtering, and sorting.
 
 ## Context
 
@@ -23,7 +23,7 @@ Parsing YAML frontmatter on every request doesn't scale. The cache stores pre-pa
 
 ## Requirements
 
-- [ ] SQLite DB at .tasks/.cache/tasks.db
+- [ ] SQLite DB at .specs/.cache/tasks.db
 - [ ] Table: tasks (all frontmatter fields + file mtime + file path)
 - [ ] FTS5 virtual table for full-text search across body content
 - [ ] `put(task)` / `get(task_id)` / `query(filters, sort_by)`

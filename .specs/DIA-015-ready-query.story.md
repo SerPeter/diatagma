@@ -63,7 +63,7 @@ The most praised feature across agent task management tools is a deterministic "
 
 - [ ] `get_ready_specs(filters, limit, include_claimed) -> list[Spec]` in core
 - [ ] Combines: unblocked check (graph) + status filter + priority sort + claim filter
-- [ ] Optional filters: tags, type, assignee, sprint
+- [ ] Optional filters: tags, type, assignee, cycle
 - [ ] Deterministic tiebreaker when priority scores are equal (by ID, ascending)
 - [ ] Performance target: <100ms for 500 specs
 
@@ -71,7 +71,7 @@ The most praised feature across agent task management tools is a deterministic "
 
 - [ ] Returns only specs with all dependencies satisfied
 - [ ] Respects priority ordering (higher score first)
-- [ ] Filters work correctly (tags, type, sprint)
+- [ ] Filters work correctly (tags, type, cycle)
 - [ ] Claimed specs excluded by default
 - [ ] Deterministic: repeated calls with same state return same order
 - [ ] Performance benchmark passes (<100ms at 500 specs)

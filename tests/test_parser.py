@@ -260,10 +260,10 @@ class TestParseSpecFile:
             parse_spec_file(f)
 
     def test_real_spec_file(self):
-        """Parse an actual spec file from the repo's .tasks/ directory."""
+        """Parse an actual spec file from the repo's .specs/ directory."""
         real = (
             Path(__file__).resolve().parent.parent
-            / ".tasks"
+            / ".specs"
             / "DIA-001-pydantic-models.story.md"
         )
         if not real.exists():

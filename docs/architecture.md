@@ -32,7 +32,7 @@ Diatagma is a spec-driven story coordination tool. Markdown files with YAML fron
 │  └──────────────────┬─────────────────────────────┘ │
 │                     │ Filesystem I/O                  │
 │  ┌──────────────────▼─────────────────────────────┐ │
-│  │              .tasks/ Directory                   │ │
+│  │              .specs/ Directory                   │ │
 │  │  ┌──────────┐ ┌────────┐ ┌──────┐ ┌─────────┐ │ │
 │  │  │*.story.md│ │*.epic.md│ │config│ │changelog│ │ │
 │  │  │*.spike.md│ │backlog/ │ │      │ │         │ │ │
@@ -115,5 +115,5 @@ diatagma/
 │   ├── research/      # Date-prefixed research documents
 │   ├── spec.md        # Product specification
 │   └── architecture.md  # This file
-└── .tasks/            # Dogfooding — diatagma's own specs
+└── .specs/            # Dogfooding — diatagma's own specs
 ```

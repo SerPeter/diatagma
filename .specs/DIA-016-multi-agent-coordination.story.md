@@ -86,7 +86,7 @@ Race conditions on concurrent file writes are the most frequently reported data 
 ## Constraints
 
 - File-level locking only — no external lock server or database for coordination
-- Claim state stored in `.tasks/.cache/claims.json` (gitignored, ephemeral)
+- Claim state stored in `.specs/.cache/claims.json` (gitignored, ephemeral)
 - Claim timeout configurable via `settings.yaml` (`claim_timeout_minutes`)
 - Must work on single machine with multiple agent processes; distributed multi-machine coordination is out of scope
 - Atomic writes: write to temp file, then rename (prevents partial writes on crash)
@@ -99,7 +99,7 @@ Race conditions on concurrent file writes are the most frequently reported data 
 - [ ] `release_spec(spec_id, agent_id) -> bool` — release only if caller owns the claim
 - [ ] `heartbeat(spec_id, agent_id)` — extend claim timeout
 - [ ] `get_claims() -> dict[str, Claim]` — current claim state
-- [ ] Claims registry at `.tasks/.cache/claims.json` with file locking
+- [ ] Claims registry at `.specs/.cache/claims.json` with file locking
 - [ ] Expired claim cleanup on every read (lazy expiration)
 
 ### Safe File I/O
