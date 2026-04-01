@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+from loguru import logger
 
 from diatagma.cli.state import GlobalState
 
@@ -40,6 +42,10 @@ def main(
     ] = False,
 ) -> None:
     """Spec-driven story coordination for humans and AI agents."""
+    # Configure loguru: CLI only shows warnings and above
+    logger.remove()
+    logger.add(sys.stderr, level="WARNING")
+
     GlobalState.specs_dir = specs_dir or Path.cwd() / ".specs"
     GlobalState.json = json_output
     GlobalState.quiet = quiet

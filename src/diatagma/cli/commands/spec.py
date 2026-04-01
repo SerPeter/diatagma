@@ -6,6 +6,8 @@ from typing import Annotated, Optional
 
 import typer
 
+from pydantic import ValidationError
+
 from diatagma.cli.output import (
     print_error,
     print_json,
@@ -32,6 +34,9 @@ def create(
     ] = None,
 ) -> None:
     """Create a new spec from template."""
+    if not title.strip():
+        print_error("Title cannot be empty.")
+
     ctx = GlobalState.get_context()
     resolved_prefix = prefix or next(iter(ctx.config.prefixes), None)
     if resolved_prefix is None:
@@ -54,7 +59,7 @@ def create(
     else:
         print_success(f"Created {spec.meta.id}: {spec.meta.title}")
         if spec.file_path:
-            print_success(f"  → {spec.file_path}")
+            print_success(f"  -> {spec.file_path}")
 
 
 @app.command()
@@ -67,6 +72,8 @@ def show(
         spec = ctx.store.get(spec_id)
     except SpecNotFoundError:
         print_error(f"{spec_id} not found.")
+    except ValidationError as e:
+        print_error(f"{spec_id} has invalid frontmatter: {e}")
 
     if GlobalState.json:
         print_json(spec)
@@ -97,7 +104,9 @@ def list_specs(
         type=type,
         tags=[tag] if tag else None,
     )
-    specs = ctx.store.list(filters=filters, sort_by=sort, reverse=reverse)
+    specs = ctx.store.list(
+        filters=filters, sort_by=sort, reverse=reverse, include_archive=False,
+    )
 
     if GlobalState.json:
         print_json(specs)
@@ -172,7 +181,7 @@ def status(
     if GlobalState.json:
         print_json(result)
     else:
-        print_success(f"{spec_id} → {new_status}")
+        print_success(f"{spec_id} -> {new_status}")
         if result.completion:
             c = result.completion
             if c.parent_progress:
@@ -213,4 +222,4 @@ def edit(
     if GlobalState.json:
         print_json(spec)
     else:
-        print_success(f"{spec_id}.{field} → {value}")
+        print_success(f"{spec_id}.{field} -> {value}")

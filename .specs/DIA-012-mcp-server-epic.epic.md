@@ -5,7 +5,7 @@ status: pending
 type: epic
 tags: [mcp, cli, agents, epic]
 business_value: 700
-story_points: 24
+story_points: 21
 assignee: ""
 created: 2026-03-27
 updated: 2026-03-29

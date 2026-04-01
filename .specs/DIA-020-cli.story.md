@@ -1,16 +1,17 @@
 ---
 id: DIA-020
-title: "Build CLI interface for spec management"
-status: pending
+title: Build CLI interface for spec management
+status: done
 type: feature
 tags: [cli, dx]
 business_value: 500
 story_points: 5
-parent: DIA-012
-assignee: ""
-created: 2026-03-29
+assignee:
 links:
   blocked_by: [DIA-003, DIA-005, DIA-006, DIA-008, DIA-015]
+parent: DIA-012
+created: 2026-03-29
+updated: 2026-04-02
 ---
 
 ## Description

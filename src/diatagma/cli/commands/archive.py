@@ -24,7 +24,7 @@ def archive(
         raise typer.Exit(code=2)
 
     ctx = GlobalState.get_context()
-    all_specs = ctx.store.list()
+    all_specs = ctx.store.list(include_archive=False)
     result = ctx.lifecycle.archive_done(agent_id="cli", all_specs=all_specs)
 
     if GlobalState.json:
@@ -44,7 +44,7 @@ def archive_cycle(
 ) -> None:
     """Archive all terminal specs in a cycle."""
     ctx = GlobalState.get_context()
-    all_specs = ctx.store.list()
+    all_specs = ctx.store.list(include_archive=False)
     result = ctx.lifecycle.archive_cycle(
         cycle_name, agent_id="cli", all_specs=all_specs
     )

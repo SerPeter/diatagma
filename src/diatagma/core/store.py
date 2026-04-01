@@ -229,13 +229,15 @@ class SpecStore:
         filters: SpecFilter | None = None,
         sort_by: SortField = SortField.ID,
         reverse: bool = False,
+        include_archive: bool = True,
     ) -> builtins.list[Spec]:
         """Discover and return specs from all directories.
 
         Broken files are logged and skipped.
+        When *include_archive* is False, the archive/ directory is skipped.
         """
         specs: builtins.list[Spec] = []
-        for path in self._scan_dirs():
+        for path in self._scan_dirs(include_archive=include_archive):
             try:
                 specs.append(parse_spec_file(path))
             except (ParseError, ValidationError, OSError) as exc:
@@ -425,10 +427,15 @@ class SpecStore:
 
     # --- Internal helpers --------------------------------------------------
 
-    def _scan_dirs(self) -> builtins.list[Path]:
-        """Glob for spec files in specs_dir, backlog/, and archive/."""
+    def _scan_dirs(
+        self, include_archive: bool = True,
+    ) -> builtins.list[Path]:
+        """Glob for spec files in specs_dir, backlog/, and optionally archive/."""
         paths: builtins.list[Path] = []
-        for directory in (self._specs_dir, self._backlog_dir, self._archive_dir):
+        dirs = [self._specs_dir, self._backlog_dir]
+        if include_archive:
+            dirs.append(self._archive_dir)
+        for directory in dirs:
             if not directory.exists():
                 continue
             for p in directory.glob("*.md"):

@@ -18,9 +18,85 @@ from pathlib import Path
 from typing import Any
 
 import frontmatter
+import frontmatter.default_handlers
 import yaml
+from yaml import SafeDumper
 
 from diatagma.core.models import Spec, SpecBody, SpecMeta
+
+
+# ---------------------------------------------------------------------------
+# Custom YAML handler — preserves flow-style lists and key order
+# ---------------------------------------------------------------------------
+
+
+class _FlowListDumper(SafeDumper):
+    """SafeDumper that uses flow style for short, simple lists."""
+
+
+def _flow_list_representer(
+    dumper: SafeDumper, data: list,  # type: ignore[type-arg]
+) -> yaml.Node:
+    """Represent lists of scalars in flow style [a, b, c]."""
+    if all(isinstance(item, (str, int, float, bool)) for item in data):
+        return dumper.represent_sequence(
+            "tag:yaml.org,2002:seq", data, flow_style=True,
+        )
+    return dumper.represent_sequence(
+        "tag:yaml.org,2002:seq", data, flow_style=False,
+    )
+
+
+def _double_quote_representer(dumper: SafeDumper, data: str) -> yaml.Node:
+    """Use double quotes when quoting is needed, plain style otherwise."""
+    # If the string needs quoting (empty, has special chars, looks like
+    # a YAML value), use double quotes instead of PyYAML's default single.
+    if dumper.resolve(yaml.ScalarNode, data, (True, False)) != "tag:yaml.org,2002:str":
+        # Looks like a non-string scalar (bool, null, number) — must quote
+        return dumper.represent_scalar(
+            "tag:yaml.org,2002:str", data, style='"',
+        )
+    if not data or data != data.strip() or ":" in data or "#" in data:
+        return dumper.represent_scalar(
+            "tag:yaml.org,2002:str", data, style='"',
+        )
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+def _double_quote_representer(dumper: SafeDumper, data: str) -> yaml.Node:
+    """Prefer double quotes over single when quoting is needed."""
+    tag = "tag:yaml.org,2002:str"
+    # Check if YAML would misinterpret this as a non-string (bool, null, etc.)
+    needs_quoting = (
+        dumper.resolve(yaml.ScalarNode, data, (True, False)) != tag
+        or not data
+        or data != data.strip()
+        or ":" in data
+        or "#" in data
+    )
+    if needs_quoting:
+        return dumper.represent_scalar(tag, data, style='"')
+    return dumper.represent_scalar(tag, data)
+
+
+_FlowListDumper.add_representer(list, _flow_list_representer)
+_FlowListDumper.add_representer(str, _double_quote_representer)
+_FlowListDumper.add_representer(str, _double_quote_representer)
+
+
+class _SpecYAMLHandler(frontmatter.default_handlers.YAMLHandler):
+    """YAMLHandler that preserves inline lists and key order."""
+
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:
+        kwargs.setdefault("Dumper", _FlowListDumper)
+        kwargs.setdefault("default_flow_style", False)
+        kwargs.setdefault("allow_unicode", True)
+        kwargs.setdefault("sort_keys", False)
+        metadata_str = yaml.dump(metadata, **kwargs).strip()  # type: ignore[call-overload]
+        return metadata_str
+
+
+_spec_yaml_handler = _SpecYAMLHandler()
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -139,6 +215,8 @@ def _meta_to_dict(meta: SpecMeta) -> dict[str, Any]:
             continue
         if isinstance(value, list) and not value:
             continue
+        if isinstance(value, str) and not value:
+            continue
         # Clean nested sub-model dicts (e.g. links): drop None/empty values
         if isinstance(value, dict):
             cleaned = {
@@ -206,7 +284,7 @@ def render_spec(spec: Spec) -> str:
         body_text = _render_body(spec.body)
 
     post = frontmatter.Post(body_text, **meta_dict)
-    return frontmatter.dumps(post) + "\n"
+    return frontmatter.dumps(post, handler=_spec_yaml_handler) + "\n"
 
 
 __all__ = [

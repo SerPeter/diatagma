@@ -111,9 +111,9 @@ def init(
 
     if not GlobalState.quiet:
         print_success(f"Initialized {specs_dir}")
-        print_success("  config/     — settings, prefixes, templates")
-        print_success("  backlog/    — deferred specs")
-        print_success("  archive/    — completed specs")
+        print_success("  config/     - settings, prefixes, templates")
+        print_success("  backlog/    - deferred specs")
+        print_success("  archive/    - completed specs")
         print_success("  changelog.md")
         if prefix:
             print_success(f"  Prefix '{prefix}' configured.")

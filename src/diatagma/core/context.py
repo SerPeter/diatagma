@@ -31,12 +31,21 @@ class DiatagmaContext:
     lifecycle: LifecycleEngine
     changelog: Changelog
 
-    def refresh_graph(self, specs: list[Spec] | None = None) -> list[Spec]:
+    def refresh_graph(
+        self,
+        specs: list[Spec] | None = None,
+        *,
+        include_archive: bool = True,
+    ) -> list[Spec]:
         """Reload specs and rebuild the dependency graph.
 
         Returns the fresh spec list for convenience.
         """
-        all_specs = specs if specs is not None else self.store.list()
+        all_specs = (
+            specs
+            if specs is not None
+            else self.store.list(include_archive=include_archive)
+        )
         self.graph.build(all_specs)
         return all_specs
 

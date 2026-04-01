@@ -28,3 +28,7 @@
 - DIA-008: epic core-library → parent DIA-011 (agent: human)
 - DIA-009: epic mcp-server → parent DIA-012 (agent: human)
 - DIA-010: epic web-dashboard → parent DIA-013 (agent: human)
+
+## 2026-04-02
+
+- DIA-020: status pending → done (agent: cli)
