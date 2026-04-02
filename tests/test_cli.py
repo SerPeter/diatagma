@@ -295,9 +295,25 @@ class TestInit:
         result = runner.invoke(app, ["--specs-dir", str(new_specs), "init"])
         assert result.exit_code == 0
         assert new_specs.exists()
+        # Config files
         assert (new_specs / "config" / "settings.yaml").exists()
+        assert (new_specs / "config" / "schema.yaml").exists()
+        assert (new_specs / "config" / "priority.yaml").exists()
+        assert (new_specs / "config" / "hooks.yaml").exists()
+        assert (new_specs / "config" / "cycles.yaml").exists()
+        assert (new_specs / "config" / "prefixes.yaml").exists()
+        # Templates
         assert (new_specs / "config" / "templates" / "story.md").exists()
+        assert (new_specs / "config" / "templates" / "epic.md").exists()
+        assert (new_specs / "config" / "templates" / "spike.md").exists()
+        assert (new_specs / "config" / "templates" / "bug.md").exists()
+        # Root files
         assert (new_specs / "changelog.md").exists()
+        assert (new_specs / "ROADMAP.md").exists()
+        assert (new_specs / ".gitignore").exists()
+        # Directories
+        assert (new_specs / "backlog").is_dir()
+        assert (new_specs / "archive").is_dir()
 
     def test_init_with_prefix(self, tmp_path):
         new_specs = tmp_path / "prefixed" / ".specs"
