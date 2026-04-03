@@ -32,3 +32,8 @@
 ## 2026-04-02
 
 - DIA-020: status pending → done (agent: cli)
+
+## 2026-04-03
+
+- DIA-009: status pending → done (agent: cli)
+- DIA-017: status pending → done (agent: cli)

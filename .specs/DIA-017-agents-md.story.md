@@ -1,17 +1,17 @@
 ---
 id: DIA-017
-title: "Establish AGENTS.md as canonical agent instructions, CLAUDE.md as pointer, and CLI skill"
-status: pending
+title: Establish AGENTS.md as canonical agent instructions, CLAUDE.md as pointer,
+  and CLI skill
+status: done
 type: feature
 tags: [cli, agents, dx]
 business_value: 300
 story_points: 5
-parent: DIA-012
-assignee: ""
-created: 2026-03-29
-updated: 2026-03-29
 links:
   blocked_by: [DIA-008, DIA-015, DIA-020]
+parent: DIA-012
+created: 2026-03-29
+updated: 2026-04-03
 ---
 
 ## Description

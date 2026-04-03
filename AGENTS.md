@@ -61,8 +61,13 @@ Use `diatagma next --json` to find the highest-priority actionable work. See the
 ## Workflow
 
 ```
-write spec → derive tests from behavior scenarios → implement → verify against spec
+write spec → derive tests from behavior scenarios → implement → verify against spec → mark done
 ```
+
+After committing implementation work for a spec:
+1. Update the spec status: `uv run diatagma status DIA-xxx done`
+2. Commit the status change: `git add .specs/ && git commit -m "chore: mark DIA-xxx done"`
+3. Any further alterations should be amended onto that commit.
 
 For architectural decisions:
 ```
