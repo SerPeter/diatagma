@@ -51,11 +51,13 @@ def _introspect_cli() -> list[dict[str, str]]:
         if opts:
             usage_parts.append(f"[{' | '.join(opts)}]")
 
-        commands.append({
-            "name": name,
-            "help": cmd.help or "",
-            "usage": " ".join(usage_parts),
-        })
+        commands.append(
+            {
+                "name": name,
+                "help": cmd.help or "",
+                "usage": " ".join(usage_parts),
+            }
+        )
 
     return commands
 
@@ -131,7 +133,9 @@ def _render_config_section(config: DiatagmaConfig) -> str:
             lines.append(f"- `{prefix}` — {defn.description}")
 
     lines.append("")
-    lines.append(f"**Statuses:** {', '.join(f'`{s}`' for s in config.settings.statuses)}")
+    lines.append(
+        f"**Statuses:** {', '.join(f'`{s}`' for s in config.settings.statuses)}"
+    )
     lines.append(f"**Types:** {', '.join(f'`{s}`' for s in config.settings.types)}")
 
     if config.settings.story_point_scale:
@@ -152,7 +156,9 @@ def _render_cli_reference() -> str:
             lines.append(f"{cmd['help']}")
         lines.append("")
 
-    lines.append("**Global options:** `--specs-dir <path>`, `--json`, `--quiet`, `--no-color`")
+    lines.append(
+        "**Global options:** `--specs-dir <path>`, `--json`, `--quiet`, `--no-color`"
+    )
 
     return "\n".join(lines)
 

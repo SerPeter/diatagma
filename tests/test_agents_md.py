@@ -284,7 +284,9 @@ class TestInitAgentsMd:
 
         # Should append to AGENTS.md, not CLAUDE.md
         assert "## Diatagma" in (repo_root / "AGENTS.md").read_text(encoding="utf-8")
-        assert "## Diatagma" not in (repo_root / "CLAUDE.md").read_text(encoding="utf-8")
+        assert "## Diatagma" not in (repo_root / "CLAUDE.md").read_text(
+            encoding="utf-8"
+        )
 
     def test_idempotent(self, populated_specs):
         repo_root = populated_specs.parent

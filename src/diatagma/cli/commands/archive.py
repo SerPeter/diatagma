@@ -17,6 +17,14 @@ def archive(
         bool,
         typer.Option("--done", help="Archive all specs with terminal status."),
     ] = False,
+    parent: Annotated[
+        str | None,
+        typer.Option("--parent", help="Only archive children of this epic ID."),
+    ] = None,
+    cycle: Annotated[
+        str | None,
+        typer.Option("--cycle", help="Only archive specs in this cycle."),
+    ] = None,
 ) -> None:
     """Archive completed specs."""
     if not done:
@@ -25,6 +33,14 @@ def archive(
 
     ctx = GlobalState.get_context()
     all_specs = ctx.store.list(include_archive=False)
+
+    if parent:
+        all_specs = [
+            s for s in all_specs if s.meta.parent == parent or s.meta.id == parent
+        ]
+    if cycle:
+        all_specs = [s for s in all_specs if s.meta.cycle == cycle]
+
     result = ctx.lifecycle.archive_done(agent_id="cli", all_specs=all_specs)
 
     if GlobalState.json:

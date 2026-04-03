@@ -105,7 +105,10 @@ def list_specs(
         tags=[tag] if tag else None,
     )
     specs = ctx.store.list(
-        filters=filters, sort_by=sort, reverse=reverse, include_archive=False,
+        filters=filters,
+        sort_by=sort,
+        reverse=reverse,
+        include_archive=False,
     )
 
     if GlobalState.json:

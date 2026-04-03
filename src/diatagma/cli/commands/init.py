@@ -478,9 +478,7 @@ def _install_skill(repo_root: Path, *, update: bool = False) -> None:
     prefs_path = skill_dir / "references" / "user-preferences.md"
 
     if skill_path.exists() and not update:
-        print_error(
-            f"{skill_path} already exists. Use --update to regenerate."
-        )
+        print_error(f"{skill_path} already exists. Use --update to regenerate.")
 
     # Try to load project config for project-specific content
     config = None
@@ -555,7 +553,9 @@ def init(
     ] = False,
     update: Annotated[
         bool,
-        typer.Option("--update", help="Regenerate skill file (preserves user-preferences)."),
+        typer.Option(
+            "--update", help="Regenerate skill file (preserves user-preferences)."
+        ),
     ] = False,
     agents_md: Annotated[
         bool,
@@ -628,7 +628,9 @@ def init(
 
     if not GlobalState.quiet:
         print_success(f"Initialized {specs_dir}")
-        print_success("  config/       settings, schema, priority, hooks, cycles, prefixes")
+        print_success(
+            "  config/       settings, schema, priority, hooks, cycles, prefixes"
+        )
         print_success("  templates/    story, epic, spike, bug")
         print_success("  backlog/      deferred specs")
         print_success("  archive/      completed specs")

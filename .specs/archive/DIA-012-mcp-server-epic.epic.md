@@ -1,16 +1,15 @@
 ---
 id: DIA-012
 title: "Epic: Agent & CLI interfaces — MCP server, CLI, coordination"
-status: pending
+status: done
 type: epic
 tags: [mcp, cli, agents, epic]
 business_value: 700
 story_points: 21
-assignee: ""
-created: 2026-03-27
-updated: 2026-03-29
 links:
   blocked_by: [DIA-011]
+created: 2026-03-27
+updated: 2026-04-03
 ---
 
 ## Vision

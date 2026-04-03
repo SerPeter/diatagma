@@ -35,15 +35,20 @@ class _FlowListDumper(SafeDumper):
 
 
 def _flow_list_representer(
-    dumper: SafeDumper, data: list,  # type: ignore[type-arg]
+    dumper: SafeDumper,
+    data: list,  # type: ignore[type-arg]
 ) -> yaml.Node:
     """Represent lists of scalars in flow style [a, b, c]."""
     if all(isinstance(item, (str, int, float, bool)) for item in data):
         return dumper.represent_sequence(
-            "tag:yaml.org,2002:seq", data, flow_style=True,
+            "tag:yaml.org,2002:seq",
+            data,
+            flow_style=True,
         )
     return dumper.represent_sequence(
-        "tag:yaml.org,2002:seq", data, flow_style=False,
+        "tag:yaml.org,2002:seq",
+        data,
+        flow_style=False,
     )
 
 
@@ -54,11 +59,15 @@ def _double_quote_representer(dumper: SafeDumper, data: str) -> yaml.Node:
     if dumper.resolve(yaml.ScalarNode, data, (True, False)) != "tag:yaml.org,2002:str":
         # Looks like a non-string scalar (bool, null, number) — must quote
         return dumper.represent_scalar(
-            "tag:yaml.org,2002:str", data, style='"',
+            "tag:yaml.org,2002:str",
+            data,
+            style='"',
         )
     if not data or data != data.strip() or ":" in data or "#" in data:
         return dumper.represent_scalar(
-            "tag:yaml.org,2002:str", data, style='"',
+            "tag:yaml.org,2002:str",
+            data,
+            style='"',
         )
     return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
