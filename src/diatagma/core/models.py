@@ -334,6 +334,16 @@ class StatusUpdateResult(BaseModel):
     completion: CompletionContext | None = None
 
 
+class DuplicateGroup(BaseModel):
+    """Spec files sharing the same ID after a merge collision."""
+
+    model_config = ConfigDict(frozen=True)
+
+    spec_id: str
+    files: list[Path]
+    slugs: list[str]
+
+
 class ArchiveResult(BaseModel):
     """Result of a batch archive operation."""
 
@@ -351,6 +361,7 @@ __all__ = [
     "ChangelogEntry",
     "CompletionContext",
     "ConsistencyIssue",
+    "DuplicateGroup",
     "DueDateUrgency",
     "HookCondition",
     "HookEntry",

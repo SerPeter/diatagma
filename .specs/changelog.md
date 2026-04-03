@@ -37,3 +37,4 @@
 
 - DIA-009: status pending → done (agent: cli)
 - DIA-017: status pending → done (agent: cli)
+- DIA-016: status pending → done (agent: cli)

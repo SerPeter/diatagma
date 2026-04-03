@@ -425,10 +425,15 @@ class SpecStore:
         next_num = max_num + 1
         return f"{prefix}-{next_num:03d}"
 
+    def scan_files(self, *, include_archive: bool = True) -> builtins.list[Path]:
+        """Return all spec file paths across active, backlog, and archive dirs."""
+        return self._scan_dirs(include_archive=include_archive)
+
     # --- Internal helpers --------------------------------------------------
 
     def _scan_dirs(
-        self, include_archive: bool = True,
+        self,
+        include_archive: bool = True,
     ) -> builtins.list[Path]:
         """Glob for spec files in specs_dir, backlog/, and optionally archive/."""
         paths: builtins.list[Path] = []

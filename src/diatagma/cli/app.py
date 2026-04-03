@@ -58,4 +58,5 @@ from diatagma.cli.commands import graph  # noqa: E402, F401
 from diatagma.cli.commands import init  # noqa: E402, F401
 from diatagma.cli.commands import server  # noqa: E402, F401
 from diatagma.cli.commands import spec  # noqa: E402, F401
+from diatagma.cli.commands import renumber  # noqa: E402, F401
 from diatagma.cli.commands import validate  # noqa: E402, F401
