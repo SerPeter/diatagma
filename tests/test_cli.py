@@ -368,7 +368,8 @@ class TestServerStubs:
         assert result.exit_code == 1
         assert "not yet implemented" in result.output.lower()
 
-    def test_mcp_not_implemented(self):
-        result = runner.invoke(app, ["mcp"])
+    def test_mcp_no_specs_dir(self, tmp_path):
+        nonexistent = tmp_path / "no_such_dir" / ".specs"
+        result = runner.invoke(app, ["--specs-dir", str(nonexistent), "mcp"])
         assert result.exit_code == 1
-        assert "not yet implemented" in result.output.lower()
+        assert "not found" in result.output.lower()
