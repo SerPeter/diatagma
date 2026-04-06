@@ -35,16 +35,12 @@ def validate(
     for cycle in dep_cycles:
         cycle_str = " → ".join(cycle)
         issues.append(
-            type(
-                "FakeIssue",
-                (),
-                {
-                    "type": "circular_dependency",
-                    "spec_id": cycle[0],
-                    "message": f"Circular dependency: {cycle_str}",
-                    "auto_corrected": False,
-                },
-            )()  # type: ignore[call-arg]
+            ConsistencyIssue(
+                type="circular_dependency",
+                spec_id=cycle[0],
+                message=f"Circular dependency: {cycle_str}",
+                auto_corrected=False,
+            )
         )
 
     # Duplicate ID detection

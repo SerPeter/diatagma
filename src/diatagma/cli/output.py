@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+from typing import NoReturn
 from typing import Any
 
 import typer
@@ -96,7 +97,7 @@ def print_warning(msg: str) -> None:
     _echo_safe_err(f"Warning: {msg}")
 
 
-def print_error(msg: str) -> None:
+def print_error(msg: str) -> NoReturn:
     """Print an error to stderr and exit."""
     _echo_safe_err(f"Error: {msg}")
     raise typer.Exit(code=1)

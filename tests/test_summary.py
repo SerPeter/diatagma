@@ -247,6 +247,7 @@ class TestArchiveWarning:
             ),
             file_path=tmp_specs_dir / "DIA-002-has-summary.story.md",
         )
+        assert spec.file_path is not None
         write_spec_file(spec, spec.file_path)
 
         messages: list[str] = []

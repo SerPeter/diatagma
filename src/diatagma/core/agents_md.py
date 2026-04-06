@@ -32,6 +32,7 @@ def _introspect_cli() -> list[dict[str, str]]:
     from diatagma.cli.app import app
 
     click_app = typer.main.get_command(app)
+    assert isinstance(click_app, click.Group)
     commands: list[dict[str, str]] = []
 
     for name, cmd in sorted(click_app.commands.items()):
@@ -40,8 +41,8 @@ def _introspect_cli() -> list[dict[str, str]]:
         for p in cmd.params:
             if isinstance(p, click.Argument):
                 args.append(f"<{p.name}>")
-            elif p.name != "help":
-                primary = p.opts[0] if p.opts else p.name
+            elif isinstance(p, click.Option) and p.name != "help":
+                primary = p.opts[0] if p.opts else p.name or ""
                 if p.is_flag:
                     opts.append(primary)
                 else:

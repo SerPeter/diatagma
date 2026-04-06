@@ -1,11 +1,15 @@
 """Tests for core.next — get_next query."""
 
-from datetime import date
+from __future__ import annotations
 
+from datetime import date
+from typing import Literal
 
 from diatagma.core.graph import SpecGraph
 from diatagma.core.models import Spec, SpecBody, SpecLinks, SpecMeta
 from diatagma.core.next import get_next
+
+type StoryPoints = Literal[1, 2, 3, 5, 8, 13, 21] | None
 
 
 # ---------------------------------------------------------------------------
@@ -23,7 +27,7 @@ def _spec(
     tags: list[str] | None = None,
     cycle: str | None = None,
     business_value: int | None = None,
-    story_points: int | None = None,
+    story_points: StoryPoints = None,
 ) -> Spec:
     """Build a minimal Spec for testing."""
     links = SpecLinks(blocked_by=blocked_by or [])
