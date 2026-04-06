@@ -204,6 +204,7 @@ class Settings(BaseModel):
     business_value_range: tuple[int, int] = (-1000, 1000)
     claim_timeout_minutes: int = 30
     auto_complete_parent: bool = True
+    auto_update_roadmap: bool = True
     web_port: int = 8742
     mcp_transport: str = "stdio"
 

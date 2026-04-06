@@ -62,7 +62,7 @@ def create_context(specs_dir: Path) -> DiatagmaContext:
         on_mutation=changelog,
     )
     graph = SpecGraph()
-    lifecycle = LifecycleEngine(store, config.settings)
+    lifecycle = LifecycleEngine(store, config.settings, config=config)
 
     return DiatagmaContext(
         config=config,

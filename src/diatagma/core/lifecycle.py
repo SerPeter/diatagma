@@ -5,7 +5,7 @@ The engine wraps store operations with lifecycle side-effects:
 completion metadata, parent auto-completion, and reopening guards.
 
 Key class:
-    LifecycleEngine(store, settings)
+    LifecycleEngine(store, settings, config=None)
         .update_status(spec_id, new_status, ..., graph, all_specs) → StatusUpdateResult
         .create_spec(prefix, title, ..., all_specs, **meta) → Spec
         .archive_cycle(cycle_name, ..., all_specs) → ArchiveResult
@@ -15,7 +15,10 @@ Key class:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from diatagma.core.config import DiatagmaConfig
 
 from loguru import logger
 
@@ -52,9 +55,15 @@ class LifecycleEngine:
     mutation.
     """
 
-    def __init__(self, store: SpecStore, settings: Settings) -> None:
+    def __init__(
+        self,
+        store: SpecStore,
+        settings: Settings,
+        config: DiatagmaConfig | None = None,
+    ) -> None:
         self._store = store
         self._settings = settings
+        self._config = config
 
     # --- Status updates with completion metadata ---------------------------
 
@@ -80,6 +89,7 @@ class LifecycleEngine:
         _patch_spec_in_list(all_specs, updated)
 
         if new_status not in _TERMINAL_STATUSES:
+            self._regenerate_roadmap()
             return StatusUpdateResult(spec=updated, completion=None)
 
         # Build completion context
@@ -95,6 +105,7 @@ class LifecycleEngine:
             next_ready=[s.meta.id for s in get_next(all_specs, graph, n=5)],
             auto_completed_parents=auto_completed,
         )
+        self._regenerate_roadmap()
         return StatusUpdateResult(spec=updated, completion=ctx)
 
     # --- Spec creation with reopening guards -------------------------------
@@ -187,6 +198,27 @@ class LifecycleEngine:
         issues.extend(self._check_orphaned_children(all_specs, specs_by_id))
 
         return issues
+
+    # --- Roadmap auto-update ------------------------------------------------
+
+    def _regenerate_roadmap(self) -> None:
+        """Regenerate ROADMAP.md if config is available and setting enabled."""
+        if self._config is None or not self._settings.auto_update_roadmap:
+            return
+
+        from diatagma.core.roadmap import generate_roadmap, update_roadmap_file
+
+        roadmap_path = self._config.specs_dir / "ROADMAP.md"
+        try:
+            if roadmap_path.exists():
+                existing = roadmap_path.read_text(encoding="utf-8")
+                content = update_roadmap_file(existing, self._store, self._config)
+            else:
+                content = generate_roadmap(self._store, self._config)
+            roadmap_path.write_text(content, encoding="utf-8")
+            logger.debug("ROADMAP.md regenerated after status change")
+        except Exception:
+            logger.opt(exception=True).warning("Failed to regenerate ROADMAP.md")
 
     # --- Internal helpers --------------------------------------------------
 

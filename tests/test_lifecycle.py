@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from diatagma.core.config import DiatagmaConfig
 from diatagma.core.graph import SpecGraph
 from diatagma.core.lifecycle import LifecycleEngine, LifecycleError
 from diatagma.core.models import (
@@ -637,3 +638,81 @@ class TestConsistencyValidation:
         issues = engine.validate_consistency(all_specs=all_specs)
 
         assert issues == []
+
+
+# ===========================================================================
+# TestRoadmapAutoUpdate
+# ===========================================================================
+
+
+class TestRoadmapAutoUpdate:
+    """update_status regenerates ROADMAP.md when config is provided."""
+
+    def test_roadmap_written_on_status_change(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        config = DiatagmaConfig(tmp_specs_dir)
+        engine = LifecycleEngine(store=store, settings=config.settings, config=config)
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Test spec", status="pending")
+
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        engine.update_status("DIA-001", "in-progress", graph=graph, all_specs=all_specs)
+
+        roadmap_path = tmp_specs_dir / "ROADMAP.md"
+        assert roadmap_path.exists()
+        content = roadmap_path.read_text(encoding="utf-8")
+        assert "DIA-001" in content
+
+    def test_roadmap_skipped_when_no_config(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        engine = LifecycleEngine(
+            store=store, settings=Settings(auto_complete_parent=True)
+        )
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Test spec", status="pending")
+
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        engine.update_status("DIA-001", "in-progress", graph=graph, all_specs=all_specs)
+
+        roadmap_path = tmp_specs_dir / "ROADMAP.md"
+        assert not roadmap_path.exists()
+
+    def test_roadmap_skipped_when_setting_disabled(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        config = DiatagmaConfig(tmp_specs_dir)
+        config._settings = Settings(auto_update_roadmap=False)
+        engine = LifecycleEngine(store=store, settings=config.settings, config=config)
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Test spec", status="pending")
+
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        engine.update_status("DIA-001", "in-progress", graph=graph, all_specs=all_specs)
+
+        roadmap_path = tmp_specs_dir / "ROADMAP.md"
+        assert not roadmap_path.exists()
+
+    def test_roadmap_failure_does_not_break_status_update(
+        self, store: SpecStore, tmp_specs_dir: Path, monkeypatch
+    ):
+        config = DiatagmaConfig(tmp_specs_dir)
+        engine = LifecycleEngine(store=store, settings=config.settings, config=config)
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Test spec", status="pending")
+
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        monkeypatch.setattr(
+            "diatagma.core.roadmap.generate_roadmap",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+
+        result = engine.update_status(
+            "DIA-001", "in-progress", graph=graph, all_specs=all_specs
+        )
+        assert result.spec.meta.status == "in-progress"
