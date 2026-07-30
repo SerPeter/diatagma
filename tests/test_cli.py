@@ -604,3 +604,51 @@ class TestGraphFormats:
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "nodes" in data and "edges" in data
+
+
+# ---------------------------------------------------------------------------
+# Graph scope + markers (active-scope default)
+# ---------------------------------------------------------------------------
+
+
+class TestGraphScope:
+    def test_default_excludes_archived(self, populated_specs):
+        (populated_specs / "archive").mkdir(exist_ok=True)
+        seed_spec_file(
+            populated_specs / "archive", "DIA-050", "Archived", status="done"
+        )
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "graph"])
+        assert result.exit_code == 0
+        ids = [n["id"] for n in json.loads(result.output)["nodes"]]
+        assert "DIA-050" not in ids
+
+    def test_full_includes_archived_with_marker(self, populated_specs):
+        (populated_specs / "archive").mkdir(exist_ok=True)
+        seed_spec_file(
+            populated_specs / "archive", "DIA-050", "Archived", status="done"
+        )
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "graph", "--full"]
+        )
+        data = json.loads(result.output)
+        node = {n["id"]: n for n in data["nodes"]}
+        assert "DIA-050" in node
+        assert node["DIA-050"]["location"] == "archived"
+
+    def test_backlog_blocker_pulled_in(self, populated_specs):
+        (populated_specs / "backlog").mkdir(exist_ok=True)
+        seed_spec_file(
+            populated_specs / "backlog", "DIA-051", "Backlog blocker", status="pending"
+        )
+        seed_spec_file(
+            populated_specs,
+            "DIA-052",
+            "Active needing blocker",
+            status="pending",
+            links={"blocked_by": ["DIA-051"]},
+        )
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "graph"])
+        data = json.loads(result.output)
+        node = {n["id"]: n for n in data["nodes"]}
+        assert "DIA-051" in node  # pulled in: it blocks active DIA-052
+        assert node["DIA-051"]["location"] == "backlog"

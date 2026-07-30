@@ -59,6 +59,18 @@ _EDGE_PRIORITY: dict[EdgeType, int] = {
 type wins so blocking is never clobbered by an informational relationship."""
 
 
+def _spec_location(spec: Spec) -> str:
+    """Classify a spec by its directory: active / backlog / archived."""
+    if spec.file_path is None:
+        return "active"
+    parts = spec.file_path.parts
+    if "archive" in parts:
+        return "archived"
+    if "backlog" in parts:
+        return "backlog"
+    return "active"
+
+
 # ---------------------------------------------------------------------------
 # SpecGraph
 # ---------------------------------------------------------------------------
@@ -92,7 +104,11 @@ class SpecGraph:
             self._terminal_statuses = frozenset(terminal_statuses)
 
         for spec in specs:
-            self._graph.add_node(spec.meta.id, status=spec.meta.status)
+            self._graph.add_node(
+                spec.meta.id,
+                status=spec.meta.status,
+                location=_spec_location(spec),
+            )
 
         for spec in specs:
             sid = spec.meta.id
@@ -211,7 +227,13 @@ class SpecGraph:
         """JSON-serializable export of nodes and typed edges."""
         nodes = []
         for node_id, data in self._graph.nodes(data=True):
-            nodes.append({"id": node_id, "status": data.get("status", "unknown")})
+            nodes.append(
+                {
+                    "id": node_id,
+                    "status": data.get("status", "unknown"),
+                    "location": data.get("location", "unknown"),
+                }
+            )
 
         edges = []
         for u, v, data in self._graph.edges(data=True):
@@ -233,7 +255,7 @@ class SpecGraph:
     def _ensure_node(self, spec_id: str) -> None:
         """Add a node if it doesn't exist (for referenced but unseen specs)."""
         if spec_id not in self._graph:
-            self._graph.add_node(spec_id, status="unknown")
+            self._graph.add_node(spec_id, status="unknown", location="unknown")
 
     def _add_typed_edge(self, u: str, v: str, edge_type: EdgeType) -> None:
         """Add a typed edge, keeping the stronger type on a same-direction clash.
