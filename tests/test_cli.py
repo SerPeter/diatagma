@@ -675,3 +675,42 @@ class TestGraphScope:
         assert "DIA-060" in ids  # node visible under --full
         edges = [(e["source"], e["target"]) for e in data["edges"]]
         assert ("DIA-060", "DIA-061") not in edges  # satisfied edge dropped
+
+
+class TestGraphScopeLiveBlockers:
+    def test_transitive_live_backlog_blocker_pulled_in(self, populated_specs):
+        (populated_specs / "backlog").mkdir(exist_ok=True)
+        seed_spec_file(
+            populated_specs / "backlog",
+            "DIA-071",
+            "B1",
+            status="pending",
+            links={"blocked_by": ["DIA-072"]},
+        )
+        seed_spec_file(populated_specs / "backlog", "DIA-072", "B2", status="pending")
+        seed_spec_file(
+            populated_specs,
+            "DIA-070",
+            "Active",
+            status="pending",
+            links={"blocked_by": ["DIA-071"]},
+        )
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "graph"])
+        ids = [n["id"] for n in json.loads(result.output)["nodes"]]
+        assert "DIA-071" in ids  # direct live blocker
+        assert "DIA-072" in ids  # transitive live blocker (was hidden before)
+
+    def test_dangling_live_blocker_not_hidden(self, populated_specs):
+        seed_spec_file(
+            populated_specs,
+            "DIA-080",
+            "Active",
+            status="pending",
+            links={"blocked_by": ["DIA-999"]},
+        )
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "graph"])
+        data = json.loads(result.output)
+        ids = [n["id"] for n in data["nodes"]]
+        assert "DIA-999" in ids  # phantom blocker surfaced (unknown = live)
+        edges = [(e["source"], e["target"]) for e in data["edges"]]
+        assert ("DIA-999", "DIA-080") in edges  # real constraint not hidden

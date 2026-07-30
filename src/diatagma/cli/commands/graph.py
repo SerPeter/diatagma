@@ -9,38 +9,47 @@ import typer
 from diatagma.cli.app import app
 from diatagma.cli.output import print_json
 from diatagma.cli.state import GlobalState
-from diatagma.core.graph import _spec_location
+from diatagma.core.graph import SpecGraph
 from diatagma.core.graph_render import to_mermaid, to_tree
-from diatagma.core.models import Spec
 
 
 def _scope_ids(
-    all_specs: list[Spec], *, backlog: bool, archive: bool, full: bool
+    graph: SpecGraph,
+    terminal: frozenset[str],
+    *,
+    backlog: bool,
+    archive: bool,
+    full: bool,
 ) -> set[str]:
     """Select which spec IDs are visible in the graph.
 
-    Default: active (root ``.specs/``) specs plus backlog items that block an
-    active spec. Flags widen the scope; ``--full`` includes everything. The
-    graph itself is always built over the full corpus so blocker statuses are
-    known — this only decides what is drawn.
+    Default: active (root ``.specs/``) specs plus **every live blocker** of a
+    visible spec, followed transitively — so no unmet constraint is hidden,
+    whether it lives in backlog, was archived while still live, or is a dangling
+    reference. Flags widen the scope; ``--full`` includes everything. Computed
+    from the built graph (which carries status + location for every node,
+    including referenced-but-missing ones).
     """
+    data = graph.to_dict()
+    status = {n["id"]: n["status"] for n in data["nodes"]}
+    location = {n["id"]: n["location"] for n in data["nodes"]}
+
     if full:
-        return {s.meta.id for s in all_specs}
+        return set(status)
 
-    locations = {s.meta.id: _spec_location(s) for s in all_specs}
-    active = [s for s in all_specs if locations[s.meta.id] == "active"]
-    scope = {s.meta.id for s in active}
-
+    scope = {nid for nid, loc in location.items() if loc == "active"}
     if backlog:
-        scope |= {sid for sid, loc in locations.items() if loc == "backlog"}
+        scope |= {nid for nid, loc in location.items() if loc == "backlog"}
     if archive:
-        scope |= {sid for sid, loc in locations.items() if loc == "archived"}
+        scope |= {nid for nid, loc in location.items() if loc == "archived"}
 
-    # Always pull in backlog items that block an active spec.
-    for spec in active:
-        for blocker in spec.meta.links.blocked_by:
-            if locations.get(blocker) == "backlog":
+    # Pull in every live (non-terminal) blocker of a visible spec, transitively.
+    frontier = list(scope)
+    while frontier:
+        for blocker in graph.get_blockers(frontier.pop()):
+            if status.get(blocker) not in terminal and blocker not in scope:
                 scope.add(blocker)
+                frontier.append(blocker)
 
     return scope
 
@@ -90,7 +99,9 @@ def graph(
     all_specs = ctx.store.list(include_archive=True)
     terminal = ctx.config.settings.terminal_status_set
     ctx.graph.build(all_specs, terminal_statuses=terminal)
-    visible = _scope_ids(all_specs, backlog=backlog, archive=archive, full=full)
+    visible = _scope_ids(
+        ctx.graph, terminal, backlog=backlog, archive=archive, full=full
+    )
 
     if format == "mermaid":
         typer.echo(to_mermaid(ctx.graph, terminal, visible))

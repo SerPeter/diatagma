@@ -60,13 +60,18 @@ type wins so blocking is never clobbered by an informational relationship."""
 
 
 def _spec_location(spec: Spec) -> str:
-    """Classify a spec by its directory: active / backlog / archived."""
+    """Classify a spec by its immediate directory: active / backlog / archived.
+
+    Only the file's own parent folder is inspected (``.specs/archive/`` vs
+    ``.specs/backlog/`` vs the root), so an ancestor path component that happens
+    to be named ``archive``/``backlog`` doesn't misclassify every spec.
+    """
     if spec.file_path is None:
         return "active"
-    parts = spec.file_path.parts
-    if "archive" in parts:
+    parent = spec.file_path.parent.name
+    if parent == "archive":
         return "archived"
-    if "backlog" in parts:
+    if parent == "backlog":
         return "backlog"
     return "active"
 

@@ -450,3 +450,44 @@ class TestConfigurableTerminalStatuses:
             [_spec("DIA-001", status="done"), _spec("DIA-002", blocked_by=["DIA-001"])]
         )
         assert graph.is_blocked("DIA-002") is False
+
+
+# ===========================================================================
+# TestSpecLocation (review regression: ancestor dir name must not misclassify)
+# ===========================================================================
+
+
+class TestSpecLocation:
+    from pathlib import Path as _P
+
+    def _spec_at(self, path: str):
+        from pathlib import Path
+
+        from diatagma.core.models import Spec, SpecMeta
+
+        return Spec(
+            meta=SpecMeta(
+                id="DIA-001", title="x", type="feature", created=date(2026, 3, 27)
+            ),
+            file_path=Path(path),
+        )
+
+    def test_ancestor_named_archive_still_active(self):
+        from diatagma.core.graph import _spec_location
+
+        s = self._spec_at("/home/u/archive/proj/.specs/DIA-001-x.story.md")
+        assert _spec_location(s) == "active"
+
+    def test_immediate_archive_dir(self):
+        from diatagma.core.graph import _spec_location
+
+        assert _spec_location(
+            self._spec_at("/p/.specs/archive/DIA-001-x.story.md")
+        ) == ("archived")
+
+    def test_immediate_backlog_dir(self):
+        from diatagma.core.graph import _spec_location
+
+        assert _spec_location(
+            self._spec_at("/p/.specs/backlog/DIA-001-x.story.md")
+        ) == ("backlog")

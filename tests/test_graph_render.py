@@ -117,3 +117,25 @@ class TestScopeAndMarkers:
     def test_location_marker_mermaid(self):
         graph = _graph([_spec("DIA-001", location="archived")])
         assert "[archived]" in to_mermaid(graph)
+
+
+class TestCycleFromDrawnEdges:
+    def test_done_broken_cycle_not_marked(self):
+        # A is done → its edge is dropped, breaking the drawn cycle.
+        graph = _graph(
+            [
+                _spec("DIA-001", status="done", blocked_by=["DIA-002"]),
+                _spec("DIA-002", status="pending", blocked_by=["DIA-001"]),
+            ]
+        )
+        out = to_tree(graph, terminal_statuses=frozenset({"done", "cancelled"}))
+        assert "(cycle)" not in out
+
+    def test_live_cycle_still_marked(self):
+        graph = _graph(
+            [
+                _spec("DIA-001", status="pending", blocked_by=["DIA-002"]),
+                _spec("DIA-002", status="pending", blocked_by=["DIA-001"]),
+            ]
+        )
+        assert "(cycle)" in to_tree(graph)

@@ -42,6 +42,35 @@ def _visible_set(data: dict, visible: Iterable[str] | None) -> set[str]:
     return {n["id"] for n in data["nodes"]} if visible is None else set(visible)
 
 
+def _nodes_in_cycles(children: dict[str, list[str]]) -> set[str]:
+    """Nodes on a cycle within the given adjacency (the edges actually drawn).
+
+    Cycles are detected over the live, in-scope blocking edges — not the full
+    graph — so a loop already broken by a done blocker isn't mislabelled.
+    """
+    white, grey, black = 0, 1, 2
+    color: dict[str, int] = dict.fromkeys(children, white)
+    on_cycle: set[str] = set()
+    path: list[str] = []
+
+    def visit(node: str) -> None:
+        color[node] = grey
+        path.append(node)
+        for nxt in children.get(node, []):
+            state = color.get(nxt, black)
+            if state == grey:
+                on_cycle.update(path[path.index(nxt) :])
+            elif state == white:
+                visit(nxt)
+        path.pop()
+        color[node] = black
+
+    for node in children:
+        if color[node] == white:
+            visit(node)
+    return on_cycle
+
+
 def to_mermaid(
     graph: SpecGraph,
     terminal_statuses: frozenset[str] = _DEFAULT_TERMINAL,
@@ -105,7 +134,7 @@ def to_tree(
         children[src].append(tgt)
         indegree[tgt] += 1
 
-    cycle_nodes = {sid for cycle in graph.detect_cycles() for sid in cycle}
+    cycle_nodes = _nodes_in_cycles(children)
 
     lines: list[str] = []
     expanded: set[str] = set()
