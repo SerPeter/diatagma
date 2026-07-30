@@ -1,12 +1,13 @@
 ---
 id: DIA-031
 title: Epic propagation, progress, and close nudges
-status: pending
+status: done
 type: feature
 tags: [cli, dx, lifecycle, epic]
 business_value: 400
 story_points: 5
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -69,12 +70,12 @@ Auto-completion machinery exists (`LifecycleEngine._auto_complete_parents`, defa
 
 ## Verification
 
-- [ ] Lifecycle tests: MCP-routed completion auto-completes the epic; nudge when auto-complete off
-- [ ] Upward-start propagation test with the setting on/off
-- [ ] `list` progress indicator and `show` children breakdown tests
-- [ ] `validate` `epic_ready_to_close` test
-- [ ] MCP `update_spec`/`claim_spec` return epic notices (depends on [[DIA-025]] routing)
-- [ ] Full suite, ruff, ty pass
+- [x] Lifecycle tests: MCP-routed completion auto-completes the epic; nudge when auto-complete off
+- [x] Upward-start propagation test with the setting on/off
+- [x] `list` progress indicator and `show` children breakdown tests
+- [x] `validate` `epic_ready_to_close` test
+- [x] MCP `update_spec`/`claim_spec` return epic notices (depends on [[DIA-025]] routing)
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -92,4 +93,25 @@ Auto-completion machinery exists (`LifecycleEngine._auto_complete_parents`, defa
 
 ## Implementation Summary
 
+Built on the [[DIA-025]] notice channel and MCP routing. `update_status` now
+promotes pending parent epics to in-progress when a child starts
+(`_auto_start_parents`, gated by the new `auto_start_parent` setting, default
+on), and on completion emits `epic_completed` notices for auto-completed epics
+plus an `epic_ready_to_close` nudge when a parent's children are all terminal
+but it wasn't auto-completed (covers the auto-complete-off path). `validate`
+gained the inverse check `epic_ready_to_close` for active epics with all
+children terminal. The CLI `list` shows a `[done/total]` indicator on epic rows
+and `show <epic>` prints a children breakdown grouped by status. Because MCP
+status changes route through the lifecycle engine (DIA-025), all of this now
+fires for agents working over MCP — the original reason epics needed manual
+adjustment.
+
 ## Implementation Notes
+
+- `_auto_start_parents` mirrors `_auto_complete_parents` and recurses upward
+  through nested epics; only promotes parents that are currently `pending`
+  (never reopens done/cancelled ones).
+- `epic_ready_to_close` is produced both as a lifecycle notice (on the
+  transition) and as a validate issue (for drift from out-of-band edits).
+- Deferred to follow-ups (listed above): a dedicated `diatagma epics` view and
+  cascading epic+children archive (ties to [[DIA-029]]).

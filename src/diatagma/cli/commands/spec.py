@@ -9,6 +9,7 @@ import typer
 from pydantic import ValidationError
 
 from diatagma.cli.output import (
+    print_epic_children,
     print_error,
     print_json,
     print_notices,
@@ -80,6 +81,29 @@ def show(
         print_json(spec)
     else:
         print_spec_detail(spec)
+        if spec.meta.type == "epic":
+            children = [
+                s
+                for s in ctx.store.list(include_archive=True)
+                if s.meta.parent == spec_id
+            ]
+            print_epic_children(children)
+
+
+def _epic_progress_map(all_specs: list) -> dict[str, tuple[int, int]]:
+    """Map each parent ID to (done_children, total_children)."""
+    terminal = {"done", "cancelled"}
+    by_parent: dict[str, list] = {}
+    for spec in all_specs:
+        if spec.meta.parent:
+            by_parent.setdefault(spec.meta.parent, []).append(spec)
+    return {
+        parent_id: (
+            sum(1 for k in kids if k.meta.status in terminal),
+            len(kids),
+        )
+        for parent_id, kids in by_parent.items()
+    }
 
 
 @app.command(name="list")
@@ -118,8 +142,18 @@ def list_specs(
         if not specs:
             print_success("No specs found.")
             return
+        progress = (
+            _epic_progress_map(ctx.store.list(include_archive=False))
+            if any(s.meta.type == "epic" for s in specs)
+            else {}
+        )
         for spec in specs:
-            print_spec_row(spec)
+            print_spec_row(
+                spec,
+                epic_progress=progress.get(spec.meta.id)
+                if spec.meta.type == "epic"
+                else None,
+            )
 
 
 @app.command(name="next")

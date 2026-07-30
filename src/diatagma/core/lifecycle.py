@@ -93,12 +93,26 @@ class LifecycleEngine:
         notices = self._status_notices(updated, new_status, graph, all_specs)
 
         if new_status not in _TERMINAL_STATUSES:
+            # DIA-031: promote pending parent epics when a child starts work
+            started = self._auto_start_parents(spec_id, agent_id, all_specs, graph)
+            for epic_id in started:
+                notices.append(
+                    Notice(
+                        kind="epic_started",
+                        spec_id=epic_id,
+                        message=f"{epic_id} started (child {spec_id} began work)",
+                    )
+                )
             self._regenerate_roadmap()
             return StatusUpdateResult(spec=updated, completion=None, notices=notices)
 
         # Build completion context
         auto_completed = self._auto_complete_parents(
             spec_id, agent_id, all_specs, graph
+        )
+        # DIA-031: epic completion / ready-to-close nudges
+        notices.extend(
+            self._epic_completion_notices(updated, auto_completed, all_specs)
         )
 
         ctx = CompletionContext(
@@ -234,6 +248,9 @@ class LifecycleEngine:
         # Check 4: Done specs with unchecked verification boxes (active only)
         issues.extend(self._check_done_unchecked_boxes(all_specs))
 
+        # Check 5: Active epics whose children are all terminal (ready to close)
+        issues.extend(self._check_epics_ready_to_close(all_specs, specs_by_id))
+
         return issues
 
     # --- Roadmap auto-update ------------------------------------------------
@@ -298,6 +315,83 @@ class LifecycleEngine:
         return [parent_id] + self._auto_complete_parents(
             parent_id, agent_id, all_specs, graph
         )
+
+    def _auto_start_parents(
+        self,
+        spec_id: str,
+        agent_id: str,
+        all_specs: list[Spec],
+        graph: SpecGraph,
+    ) -> list[str]:
+        """Promote pending parents to in-progress when a child starts.
+
+        Mirrors ``_auto_complete_parents`` upward. Returns started IDs.
+        """
+        if not self._settings.auto_start_parent:
+            return []
+
+        spec = _find_spec(all_specs, spec_id)
+        if spec is None or spec.meta.parent is None:
+            return []
+
+        parent_id = spec.meta.parent
+        parent = _find_spec(all_specs, parent_id)
+        if parent is None or parent.meta.status != "pending":
+            return []
+
+        self._store.update(parent_id, agent_id=agent_id, status="in-progress")
+        graph.update_node_status(parent_id, "in-progress")
+        _patch_status_in_list(all_specs, parent_id, "in-progress")
+        logger.info("{} auto-started (child {} began)", parent_id, spec_id)
+
+        return [parent_id] + self._auto_start_parents(
+            parent_id, agent_id, all_specs, graph
+        )
+
+    def _epic_completion_notices(
+        self,
+        spec: Spec,
+        auto_completed: list[str],
+        all_specs: list[Spec],
+    ) -> list[Notice]:
+        """Build epic notices for a completion: auto-completed + ready-to-close.
+
+        ``epic_ready_to_close`` covers the case where the parent's children
+        are all terminal but the parent was not auto-completed (setting off,
+        or a non-auto path), so the user gets a nudge either way.
+        """
+        notices: list[Notice] = []
+
+        for epic_id in auto_completed:
+            notices.append(
+                Notice(
+                    kind="epic_completed",
+                    spec_id=epic_id,
+                    message=f"{epic_id} auto-completed — all children are done",
+                    suggested_command=f"diatagma archive {epic_id}",
+                )
+            )
+
+        parent_id = spec.meta.parent
+        if parent_id and parent_id not in auto_completed:
+            parent = _find_spec(all_specs, parent_id)
+            if parent is not None and parent.meta.status not in _TERMINAL_STATUSES:
+                children = [s for s in all_specs if s.meta.parent == parent_id]
+                if children and all(
+                    c.meta.status in _TERMINAL_STATUSES for c in children
+                ):
+                    notices.append(
+                        Notice(
+                            kind="epic_ready_to_close",
+                            spec_id=parent_id,
+                            message=(
+                                f"All {len(children)} children of {parent_id} are done"
+                            ),
+                            suggested_command=f"diatagma status {parent_id} done",
+                        )
+                    )
+
+        return notices
 
     def _guard_parent(self, parent_id: str, agent_id: str, reopen: bool) -> None:
         """Check parent epic status; reopen or raise as needed."""
@@ -459,6 +553,47 @@ class LifecycleEngine:
                 ConsistencyIssue(
                     type="cycle_complete_with_active",
                     spec_id=cycle_name,
+                    message=msg,
+                    auto_corrected=False,
+                )
+            )
+
+        return issues
+
+    def _check_epics_ready_to_close(
+        self,
+        all_specs: list[Spec],
+        specs_by_id: dict[str, Spec],
+    ) -> list[ConsistencyIssue]:
+        """Detect active epics whose children are all terminal.
+
+        The inverse of the done-epic-with-active-children check: here the
+        children finished but the epic was never closed (e.g. status edited
+        out of band, or auto-complete disabled). Nudge, don't auto-correct.
+        """
+        issues: list[ConsistencyIssue] = []
+
+        children_by_parent: dict[str, list[Spec]] = {}
+        for spec in all_specs:
+            if spec.meta.parent:
+                children_by_parent.setdefault(spec.meta.parent, []).append(spec)
+
+        for epic_id, children in children_by_parent.items():
+            epic = specs_by_id.get(epic_id)
+            if epic is None or epic.meta.type != "epic":
+                continue
+            if epic.meta.status in _TERMINAL_STATUSES:
+                continue
+            if self._store.is_archived(epic_id):
+                continue
+            if not all(c.meta.status in _TERMINAL_STATUSES for c in children):
+                continue
+
+            msg = f"{epic_id} has all children terminal but is still {epic.meta.status}"
+            issues.append(
+                ConsistencyIssue(
+                    type="epic_ready_to_close",
+                    spec_id=epic_id,
                     message=msg,
                     auto_corrected=False,
                 )

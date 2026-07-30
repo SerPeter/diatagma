@@ -29,18 +29,40 @@ def print_json(data: Any) -> None:
         _echo_safe(json.dumps(data, indent=2, default=str))
 
 
-def print_spec_row(spec: Spec, *, show_priority: bool = False) -> None:
+_TERMINAL_STATUSES = frozenset({"done", "cancelled"})
+
+
+def print_spec_row(
+    spec: Spec,
+    *,
+    show_priority: bool = False,
+    epic_progress: tuple[int, int] | None = None,
+) -> None:
     """Print a single spec as a compact one-line summary."""
     parts = [
         spec.meta.id,
         _status_badge(spec.meta.status),
         spec.meta.title,
     ]
+    if epic_progress is not None:
+        done, total = epic_progress
+        parts.append(f"[{done}/{total}]")
     if show_priority and spec.priority_score > 0:
         parts.append(f"(p={spec.priority_score:.1f})")
     if spec.meta.assignee:
         parts.append(f"@{spec.meta.assignee}")
     _echo_safe("  ".join(parts))
+
+
+def print_epic_children(children: list[Spec]) -> None:
+    """Print an epic's children grouped by status with a progress summary."""
+    if not children:
+        return
+    done = sum(1 for c in children if c.meta.status in _TERMINAL_STATUSES)
+    _echo_safe("")
+    _echo_safe(f"  Children ({done}/{len(children)} done):")
+    for child in sorted(children, key=lambda c: c.meta.id):
+        _echo_safe(f"    [{child.meta.status}]  {child.meta.id}: {child.meta.title}")
 
 
 def print_spec_detail(spec: Spec) -> None:

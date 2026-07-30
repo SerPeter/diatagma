@@ -813,3 +813,101 @@ class TestStatusNotices:
 
         issues = engine.validate_consistency(all_specs=all_specs)
         assert any(i.type == "done_with_unchecked_boxes" for i in issues)
+
+
+# ===========================================================================
+# TestEpicPropagation (DIA-031)
+# ===========================================================================
+
+
+class TestEpicPropagation:
+    """Epic auto-start, close nudges, and ready-to-close validation."""
+
+    def test_epic_completed_notice(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="in-progress", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "done", graph=graph, all_specs=all_specs
+        )
+        kinds = {n.kind: n for n in result.notices}
+        assert "epic_completed" in kinds
+        assert kinds["epic_completed"].spec_id == "DIA-011"
+        assert store.get("DIA-011").meta.status == "done"
+
+    def test_epic_ready_to_close_when_autocomplete_off(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        engine = LifecycleEngine(
+            store=store,
+            settings=Settings(auto_complete_parent=False, auto_start_parent=False),
+        )
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="in-progress", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "done", graph=graph, all_specs=all_specs
+        )
+        kinds = {n.kind: n for n in result.notices}
+        assert "epic_ready_to_close" in kinds
+        assert kinds["epic_ready_to_close"].suggested_command == (
+            "diatagma status DIA-011 done"
+        )
+        assert store.get("DIA-011").meta.status == "pending"
+
+    def test_upward_start_propagation(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="pending", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "in-progress", graph=graph, all_specs=all_specs
+        )
+        assert store.get("DIA-011").meta.status == "in-progress"
+        assert any(n.kind == "epic_started" for n in result.notices)
+
+    def test_upward_start_disabled(self, store: SpecStore, tmp_specs_dir: Path):
+        engine = LifecycleEngine(
+            store=store, settings=Settings(auto_start_parent=False)
+        )
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="pending", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "in-progress", graph=graph, all_specs=all_specs
+        )
+        assert store.get("DIA-011").meta.status == "pending"
+        assert not any(n.kind == "epic_started" for n in result.notices)
+
+    def test_validate_epic_ready_to_close(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        seed_spec_file(
+            tmp_specs_dir, "DIA-011", "Epic", spec_type="epic", status="in-progress"
+        )
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="done", parent="DIA-011"
+        )
+        all_specs = store.list()
+
+        issues = engine.validate_consistency(all_specs=all_specs)
+        assert any(i.type == "epic_ready_to_close" for i in issues)

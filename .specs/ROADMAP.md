@@ -4,8 +4,8 @@
 | Metric | Count |
 |--------|-------|
 | Total specs | 31 |
-| Active (current cycle) | 9 |
-| Archived | 22 |
+| Active (current cycle) | 8 |
+| Archived | 23 |
 | Backlog | 0 |
 <!-- diatagma:meta:end -->
 
@@ -30,5 +30,4 @@
 - [ ] DIA-028: Status drift detection command
 - [ ] DIA-029: Archive command status guard
 - [ ] DIA-030: CLI create accepts per-field input
-- [ ] DIA-031: Epic propagation, progress, and close nudges
 <!-- diatagma:cycle:current:end -->

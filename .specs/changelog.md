@@ -57,3 +57,4 @@
 - DIA-030: created (agent: cli)
 - DIA-031: created (agent: cli)
 - DIA-025: status pending → done (agent: cli)
+- DIA-031: status pending → done (agent: cli)

@@ -403,3 +403,34 @@ class TestServerStubs:
         result = runner.invoke(app, ["--specs-dir", str(nonexistent), "mcp"])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
+
+
+# ---------------------------------------------------------------------------
+# Epic display (DIA-031)
+# ---------------------------------------------------------------------------
+
+
+class TestEpicDisplay:
+    def test_list_shows_epic_progress(self, populated_specs):
+        seed_spec_file(populated_specs, "DIA-020", "Epic", spec_type="epic")
+        seed_spec_file(
+            populated_specs, "DIA-021", "Child 1", status="done", parent="DIA-020"
+        )
+        seed_spec_file(
+            populated_specs, "DIA-022", "Child 2", status="pending", parent="DIA-020"
+        )
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "list"])
+        assert result.exit_code == 0
+        assert "[1/2]" in result.output
+
+    def test_show_epic_children(self, populated_specs):
+        seed_spec_file(populated_specs, "DIA-020", "Epic", spec_type="epic")
+        seed_spec_file(
+            populated_specs, "DIA-021", "Child 1", status="done", parent="DIA-020"
+        )
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "show", "DIA-020"]
+        )
+        assert result.exit_code == 0
+        assert "Children" in result.output
+        assert "DIA-021" in result.output
