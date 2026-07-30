@@ -155,7 +155,7 @@ def print_notices(notices: list[Notice]) -> None:
     for notice in notices:
         _echo_safe(f"  ! {notice.message}")
         if notice.suggested_command:
-            _echo_safe(f"      → {notice.suggested_command}")
+            _echo_safe(f"      -> {notice.suggested_command}")
 
 
 def print_error(msg: str) -> NoReturn:

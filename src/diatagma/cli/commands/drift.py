@@ -22,7 +22,7 @@ def drift() -> None:
         if GlobalState.json:
             print_json([])
         else:
-            print_warning("git not available — cannot detect drift.")
+            print_warning("git not available - cannot detect drift.")
         return
 
     specs = ctx.store.list(include_archive=False)
