@@ -48,6 +48,16 @@ class EdgeType(str, Enum):
     DISCOVERED_FROM = "discovered_from"
 
 
+_EDGE_PRIORITY: dict[EdgeType, int] = {
+    EdgeType.BLOCKED_BY: 3,
+    EdgeType.SUPERSEDES: 2,
+    EdgeType.DISCOVERED_FROM: 1,
+    EdgeType.RELATES_TO: 0,
+}
+"""When two declarations map to the same directed edge, the higher-priority
+type wins so blocking is never clobbered by an informational relationship."""
+
+
 # ---------------------------------------------------------------------------
 # SpecGraph
 # ---------------------------------------------------------------------------
@@ -82,20 +92,20 @@ class SpecGraph:
 
             for blocker in links.blocked_by:
                 self._ensure_node(blocker)
-                self._graph.add_edge(blocker, sid, edge_type=EdgeType.BLOCKED_BY)
+                self._add_typed_edge(blocker, sid, EdgeType.BLOCKED_BY)
 
             for related in links.relates_to:
                 self._ensure_node(related)
-                self._graph.add_edge(sid, related, edge_type=EdgeType.RELATES_TO)
+                self._add_typed_edge(sid, related, EdgeType.RELATES_TO)
 
             for superseded in links.supersedes:
                 self._ensure_node(superseded)
-                self._graph.add_edge(sid, superseded, edge_type=EdgeType.SUPERSEDES)
+                self._add_typed_edge(sid, superseded, EdgeType.SUPERSEDES)
 
             if links.discovered_from is not None:
                 self._ensure_node(links.discovered_from)
-                self._graph.add_edge(
-                    links.discovered_from, sid, edge_type=EdgeType.DISCOVERED_FROM
+                self._add_typed_edge(
+                    links.discovered_from, sid, EdgeType.DISCOVERED_FROM
                 )
 
     def update_node_status(self, spec_id: str, new_status: str) -> None:
@@ -216,6 +226,22 @@ class SpecGraph:
         """Add a node if it doesn't exist (for referenced but unseen specs)."""
         if spec_id not in self._graph:
             self._graph.add_node(spec_id, status="unknown")
+
+    def _add_typed_edge(self, u: str, v: str, edge_type: EdgeType) -> None:
+        """Add a typed edge, keeping the stronger type on a same-direction clash.
+
+        Two specs can declare relationships that collapse to the same directed
+        edge (e.g. A ``blocked_by`` B while B ``relates_to`` A both yield
+        B → A). A plain DiGraph lets the last write silently win; instead the
+        higher-priority ``EdgeType`` is kept so a ``blocked_by`` is never
+        clobbered by an informational edge.
+        """
+        existing = self._edge_type(u, v)
+        if existing is not None and _EDGE_PRIORITY.get(
+            existing, -1
+        ) >= _EDGE_PRIORITY.get(edge_type, -1):
+            return
+        self._graph.add_edge(u, v, edge_type=edge_type)
 
     def _edge_type(self, source: str, target: str) -> EdgeType | None:
         """Get the edge type between two nodes, or None."""

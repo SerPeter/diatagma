@@ -376,3 +376,49 @@ class TestProtocol:
     def test_satisfies_protocol(self):
         g = SpecGraph()
         assert isinstance(g, DependencyLookup)
+
+
+# ===========================================================================
+# TestEdgeTypeCollision (regression: blocked_by must not be overwritten)
+# ===========================================================================
+
+
+class TestEdgeTypeCollision:
+    """A blocked_by edge must survive a relates_to on the same directed pair."""
+
+    def test_blocked_by_wins_over_relates_to(self):
+        # DIA-010 blocked_by DIA-022; DIA-022 relates_to DIA-010 — both map to
+        # the directed edge DIA-022 -> DIA-010.
+        graph = SpecGraph()
+        graph.build(
+            [
+                _spec("DIA-022", status="pending", relates_to=["DIA-010"]),
+                _spec("DIA-010", status="pending", blocked_by=["DIA-022"]),
+            ]
+        )
+        assert "DIA-022" in graph.get_blockers("DIA-010")
+        assert graph.is_blocked("DIA-010") is True
+
+    def test_order_independent(self):
+        # Same result regardless of spec ordering in build().
+        specs = [
+            _spec("DIA-010", status="pending", blocked_by=["DIA-022"]),
+            _spec("DIA-022", status="pending", relates_to=["DIA-010"]),
+        ]
+        graph = SpecGraph()
+        graph.build(specs)
+        assert "DIA-022" in graph.get_blockers("DIA-010")
+
+        graph.build(list(reversed(specs)))
+        assert "DIA-022" in graph.get_blockers("DIA-010")
+
+    def test_done_blocker_still_not_blocking(self):
+        # The fix must not make a satisfied (done) blocker block.
+        graph = SpecGraph()
+        graph.build(
+            [
+                _spec("DIA-022", status="done", relates_to=["DIA-010"]),
+                _spec("DIA-010", status="pending", blocked_by=["DIA-022"]),
+            ]
+        )
+        assert graph.is_blocked("DIA-010") is False
