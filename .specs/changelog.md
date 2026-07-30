@@ -46,3 +46,13 @@
 - DIA-017: moved to archive (agent: cli)
 - DIA-020: moved to archive (agent: cli)
 - DIA-024: moved to archive (agent: cli)
+
+## 2026-07-30
+
+- DIA-025: created (agent: cli)
+- DIA-026: created (agent: cli)
+- DIA-027: created (agent: cli)
+- DIA-028: created (agent: cli)
+- DIA-029: created (agent: cli)
+- DIA-030: created (agent: cli)
+- DIA-031: created (agent: cli)
