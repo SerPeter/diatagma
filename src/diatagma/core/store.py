@@ -46,7 +46,12 @@ from diatagma.core.models import (
     SpecFilter,
     SpecMeta,
 )
-from diatagma.core.parser import ParseError, parse_spec_file, write_spec_file
+from diatagma.core.parser import (
+    ParseError,
+    fill_body_sections,
+    parse_spec_file,
+    write_spec_file,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -288,6 +293,17 @@ class SpecStore:
         """Generate next ID, write a new spec file from template."""
         self._validate_prefix(prefix)
 
+        # Body-section overrides (e.g. description, verification) are filled
+        # into the template rather than passed to frontmatter.
+        body_field_names = {
+            name for name in SpecBody.model_fields if name != "extra_sections"
+        }
+        body_overrides = {
+            key: meta.pop(key)
+            for key in list(meta)
+            if key in body_field_names and meta[key]
+        }
+
         with self._create_lock:
             spec_id = self.next_id(prefix)
 
@@ -296,6 +312,8 @@ class SpecStore:
             template_defaults, template_body = _split_template(
                 self._templates.get(template_name, "")
             )
+            if body_overrides:
+                template_body = fill_body_sections(template_body, body_overrides)
 
             # Build filename and path
             filename = self._build_filename(spec_id, title, spec_type)

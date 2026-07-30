@@ -226,6 +226,55 @@ class TestCreate:
         data = json.loads(result.output)
         assert data["meta"]["title"] == "Another feature"
 
+    def test_create_with_fields(self, populated_specs):
+        result = runner.invoke(
+            app,
+            [
+                "--specs-dir",
+                str(populated_specs),
+                "--json",
+                "create",
+                "Rich spec",
+                "--business-value",
+                "300",
+                "--story-points",
+                "5",
+                "--parent",
+                "DIA-001",
+                "--tags",
+                "cli,dx",
+                "--description",
+                "Users can do X",
+                "--verification",
+                "does A",
+                "--verification",
+                "does B",
+            ],
+        )
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["meta"]["business_value"] == 300
+        assert data["meta"]["story_points"] == 5
+        assert data["meta"]["parent"] == "DIA-001"
+        assert data["meta"]["tags"] == ["cli", "dx"]
+        assert "Users can do X" in data["raw_body"]
+        assert "- [ ] does A" in data["raw_body"]
+        assert "- [ ] does B" in data["raw_body"]
+
+    def test_create_invalid_story_points(self, populated_specs):
+        result = runner.invoke(
+            app,
+            [
+                "--specs-dir",
+                str(populated_specs),
+                "create",
+                "Bad points",
+                "--story-points",
+                "4",
+            ],
+        )
+        assert result.exit_code == 1
+
 
 # ---------------------------------------------------------------------------
 # Status

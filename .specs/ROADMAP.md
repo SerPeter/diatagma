@@ -4,8 +4,8 @@
 | Metric | Count |
 |--------|-------|
 | Total specs | 31 |
-| Active (current cycle) | 6 |
-| Archived | 25 |
+| Active (current cycle) | 5 |
+| Archived | 26 |
 | Backlog | 0 |
 <!-- diatagma:meta:end -->
 
@@ -27,5 +27,4 @@
 - [ ] DIA-022: Design web dashboard UX: wireframes and interaction spec for all views
 - [ ] DIA-028: Status drift detection command
 - [ ] DIA-029: Archive command status guard
-- [ ] DIA-030: CLI create accepts per-field input
 <!-- diatagma:cycle:current:end -->

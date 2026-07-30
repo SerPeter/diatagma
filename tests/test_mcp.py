@@ -157,6 +157,22 @@ class TestCreateSpec:
         data = json.loads(result.content[0].text)
         assert data["meta"]["id"].startswith("TST-")
 
+    async def test_create_with_body_fields(self, mcp_client):
+        created = await mcp_client.call_tool(
+            "create_spec",
+            {
+                "title": "Rich",
+                "prefix": "TST",
+                "description": "Users can do X",
+                "verification": "crit one\ncrit two",
+            },
+        )
+        cid = json.loads(created.content[0].text)["meta"]["id"]
+        got = await mcp_client.call_tool("get_spec", {"spec_id": cid})
+        body = json.loads(got.content[0].text)["body"]
+        assert "Users can do X" in body["description"]
+        assert "crit one" in body["verification"]
+
 
 # ---------------------------------------------------------------------------
 # Tools — update_spec

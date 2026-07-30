@@ -136,6 +136,16 @@ class TestCreate:
         assert spec.raw_body is not None
         assert "## Description" in spec.raw_body
 
+    def test_create_fills_body_sections(self, spec_store: SpecStore):
+        spec = spec_store.create(
+            "DIA", "Filled", description="My desc", verification="- [ ] c1"
+        )
+        assert spec.raw_body is not None
+        assert "## Description\n\nMy desc" in spec.raw_body
+        assert "- [ ] c1" in spec.raw_body
+        # Body overrides must not leak into frontmatter
+        assert spec.meta.model_dump().get("description") is None
+
     def test_template_frontmatter_stripped_from_body(
         self, tmp_specs_dir: Path, sample_prefixes
     ):

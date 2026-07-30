@@ -220,9 +220,16 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         story_points: int | None = None,
         parent: str | None = None,
         cycle: str | None = None,
+        description: str | None = None,
+        verification: str | None = None,
         agent_id: str = "mcp-agent",
     ) -> dict:
-        """Create a spec. Prefix defaults to first configured prefix."""
+        """Create a spec. Prefix defaults to first configured prefix.
+
+        ``description`` fills the Description section; ``verification`` is a
+        newline-separated list of criteria that fills the Verification section
+        as checkboxes.
+        """
         ctx = create_context(specs_dir)
         all_specs = ctx.refresh_graph()
 
@@ -241,6 +248,12 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
             extra["parent"] = parent
         if cycle:
             extra["cycle"] = cycle
+        if description:
+            extra["description"] = description
+        if verification:
+            items = [v.strip() for v in verification.splitlines() if v.strip()]
+            if items:
+                extra["verification"] = "\n".join(f"- [ ] {v}" for v in items)
 
         spec = ctx.lifecycle.create_spec(
             resolved_prefix,

@@ -207,6 +207,37 @@ def _render_body(body: SpecBody) -> str:
     return "\n\n".join(parts)
 
 
+def fill_body_sections(body_text: str, overrides: dict[str, str]) -> str:
+    """Replace the content under given H2 sections, preserving the rest.
+
+    ``overrides`` maps SpecBody field names (e.g. ``"description"``) to the
+    replacement content for that section. A section that isn't present is
+    appended; all other sections — including their template comments — are
+    left byte-for-byte intact.
+    """
+    result = body_text
+    for field_name, content in overrides.items():
+        result = _replace_section(result, _field_to_heading(field_name), content)
+    return result
+
+
+def _replace_section(body_text: str, heading: str, content: str) -> str:
+    """Replace the body under ``## {heading}`` with ``content`` (or append)."""
+    heading_re = re.compile(rf"^## {re.escape(heading)}[ \t]*$", re.MULTILINE)
+    match = heading_re.search(body_text)
+    if match is None:
+        base = body_text.rstrip()
+        prefix = f"{base}\n\n" if base else ""
+        return f"{prefix}## {heading}\n\n{content}\n"
+
+    next_h2 = _H2_RE.search(body_text, match.end())
+    end = next_h2.start() if next_h2 else len(body_text)
+    head = body_text[: match.end()]
+    tail = body_text[end:]
+    block = f"{head}\n\n{content}\n\n"
+    return block + tail if tail else block.rstrip() + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Metadata serialization
 # ---------------------------------------------------------------------------
@@ -298,6 +329,7 @@ def render_spec(spec: Spec) -> str:
 
 __all__ = [
     "ParseError",
+    "fill_body_sections",
     "parse_frontmatter",
     "parse_spec_file",
     "render_spec",

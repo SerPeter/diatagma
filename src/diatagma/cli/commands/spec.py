@@ -34,8 +34,35 @@ def create(
         Optional[str],
         typer.Option("--prefix", "-p", help="ID prefix (default: first configured)."),
     ] = None,
+    business_value: Annotated[
+        Optional[int], typer.Option("--business-value", "-b", help="Business value.")
+    ] = None,
+    story_points: Annotated[
+        Optional[int], typer.Option("--story-points", help="Story points (Fibonacci).")
+    ] = None,
+    tags: Annotated[
+        Optional[str], typer.Option("--tags", help="Comma-separated tags.")
+    ] = None,
+    parent: Annotated[
+        Optional[str], typer.Option("--parent", help="Parent epic ID.")
+    ] = None,
+    cycle: Annotated[Optional[str], typer.Option("--cycle", help="Cycle name.")] = None,
+    assignee: Annotated[
+        Optional[str], typer.Option("--assignee", help="Assignee.")
+    ] = None,
+    description: Annotated[
+        Optional[str],
+        typer.Option("--description", "-d", help="Fills the Description section."),
+    ] = None,
+    verification: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--verification",
+            help="Acceptance criterion (repeatable); fills Verification.",
+        ),
+    ] = None,
 ) -> None:
-    """Create a new spec from template."""
+    """Create a new spec from template, optionally pre-filling fields."""
     if not title.strip():
         print_error("Title cannot be empty.")
 
@@ -44,6 +71,24 @@ def create(
     if resolved_prefix is None:
         print_error("No prefixes configured. Run 'diatagma init' first.")
 
+    meta: dict = {"spec_type": type}
+    if business_value is not None:
+        meta["business_value"] = business_value
+    if story_points is not None:
+        meta["story_points"] = story_points
+    if tags:
+        meta["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
+    if parent:
+        meta["parent"] = parent
+    if cycle:
+        meta["cycle"] = cycle
+    if assignee:
+        meta["assignee"] = assignee
+    if description:
+        meta["description"] = description
+    if verification:
+        meta["verification"] = "\n".join(f"- [ ] {v}" for v in verification)
+
     try:
         all_specs = ctx.refresh_graph()
         spec = ctx.lifecycle.create_spec(
@@ -51,7 +96,7 @@ def create(
             title,
             agent_id="cli",
             all_specs=all_specs,
-            spec_type=type,
+            **meta,
         )
     except Exception as e:
         print_error(str(e))

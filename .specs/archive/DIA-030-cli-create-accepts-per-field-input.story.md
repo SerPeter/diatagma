@@ -1,12 +1,13 @@
 ---
 id: DIA-030
 title: CLI create accepts per-field input
-status: pending
+status: done
 type: feature
 tags: [cli, dx]
 business_value: 200
 story_points: 3
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -64,11 +65,11 @@ created: 2026-07-30
 
 ## Verification
 
-- [ ] CLI tests for each field option and combinations
-- [ ] Section-fill helper unit tests (description, verification, preserves siblings)
-- [ ] Invalid `--story-points` rejected with friendly error
-- [ ] MCP `create_spec` parity test
-- [ ] Full suite, ruff, ty pass
+- [x] CLI tests for each field option and combinations
+- [x] Section-fill helper unit tests (description, verification, preserves siblings)
+- [x] Invalid `--story-points` rejected with friendly error
+- [x] MCP `create_spec` parity test
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -79,4 +80,22 @@ created: 2026-07-30
 
 ## Implementation Summary
 
+`diatagma create` gained `--business-value`, `--story-points`, `--tags`,
+`--parent`, `--cycle`, `--assignee`, `--description`, and repeatable
+`--verification`. Frontmatter fields ride the `**meta` path into `store.create`
+(building on the [[DIA-016]] merge); body fields are filled surgically by a new
+`parser.fill_body_sections` helper that replaces a section's placeholder while
+preserving every other section and its comments. `store.create` pops
+body-section keys out of the metadata before frontmatter validation and fills
+them into the resolved template. MCP `create_spec` gained matching
+`description`/`verification` params (newline-separated criteria) via the same
+core path.
+
 ## Implementation Notes
+
+- `--verification` items are formatted into `- [ ]` checkboxes by the CLI; MCP
+  takes newline-separated criteria and does the same.
+- Invalid `--story-points` (non-Fibonacci) surfaces as a clean CLI error via the
+  existing `SpecMeta` validation + `print_error`, no traceback.
+- A missing target section is appended rather than dropped, so body fields work
+  regardless of the template's section set.
