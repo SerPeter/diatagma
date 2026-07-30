@@ -91,13 +91,15 @@ uv run pre-commit run --all-files  # All pre-commit hooks
 
 ```bash
 uv run diatagma next               # Show priority-sorted actionable specs
-uv run diatagma show DIA-017       # Display spec details
-uv run diatagma list               # List all active specs
+uv run diatagma show DIA-017       # Spec details (live blockers, checkbox %, epic children)
+uv run diatagma list               # List active specs (blocked markers, epic [done/total])
 uv run diatagma list --status pending  # Filter by status
-uv run diatagma status DIA-017 in-progress  # Update spec status
-uv run diatagma create "Title"     # Create a new spec
+uv run diatagma status DIA-017 in-progress  # Update status (auto-starts parent epic; notices)
+uv run diatagma create "T" -d "desc" --verification "crit" -b 300 --parent DIA-011  # Create with fields
+uv run diatagma drift              # Report specs referenced in commits but not marked done
+uv run diatagma archive DIA-017    # Archive one terminal spec (--force to override guard)
 uv run diatagma validate           # Check for inconsistencies
-uv run diatagma graph              # Export dependency graph (JSON)
+uv run diatagma graph --format tree  # Dependency graph: json|mermaid|tree, --full/--backlog/--archive
 uv run diatagma init --skill       # Install Claude Code skill
 uv run diatagma init --update      # Regenerate skill after changes
 ```
@@ -112,3 +114,6 @@ All commands support `--json` for machine-readable output and `--specs-dir` to o
 - Tests mirror source structure: `tests/test_<module>.py`
 - No database — the filesystem is the database, SQLite is just a cache
 - Spec files use typed extensions: `.story.md`, `.epic.md`, `.spike.md`
+- Status vocabulary is config-driven — read terminal/active statuses from `Settings`
+  (`terminal_status_set`, `active_status_set`, `started_status`, `completed_status`),
+  never hardcode literals like `"done"`/`"in-progress"`. See [ADR-004](docs/adr/004-config-driven-status-vocabulary.md).
