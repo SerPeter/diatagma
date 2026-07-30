@@ -93,16 +93,18 @@ class LifecycleEngine:
         notices = self._status_notices(updated, new_status, graph, all_specs)
 
         if new_status not in _TERMINAL_STATUSES:
-            # DIA-031: promote pending parent epics when a child starts work
-            started = self._auto_start_parents(spec_id, agent_id, all_specs, graph)
-            for epic_id in started:
-                notices.append(
-                    Notice(
-                        kind="epic_started",
-                        spec_id=epic_id,
-                        message=f"{epic_id} started (child {spec_id} began work)",
+            # DIA-031: promote pending parent epics only when a child actually
+            # starts work — not on a reset back to pending.
+            if new_status == "in-progress":
+                started = self._auto_start_parents(spec_id, agent_id, all_specs, graph)
+                for epic_id in started:
+                    notices.append(
+                        Notice(
+                            kind="epic_started",
+                            spec_id=epic_id,
+                            message=f"{epic_id} started (child {spec_id} began work)",
+                        )
                     )
-                )
             self._regenerate_roadmap()
             return StatusUpdateResult(spec=updated, completion=None, notices=notices)
 
@@ -196,11 +198,13 @@ class LifecycleEngine:
         parent_id = meta.get("parent")
         cycle_name = meta.get("cycle")
 
-        if parent_id:
-            self._guard_parent(parent_id, agent_id, reopen)
-
+        # Cycle guard only raises; parent guard may reopen the parent. Check the
+        # cycle first so an aborted create never leaves the parent mutated.
         if cycle_name and all_specs is not None:
             self._guard_cycle(cycle_name, all_specs, reopen)
+
+        if parent_id:
+            self._guard_parent(parent_id, agent_id, reopen)
 
         return self._store.create(prefix, title, agent_id=agent_id, **meta)
 

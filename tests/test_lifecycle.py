@@ -960,3 +960,53 @@ class TestBlockedStart:
             "DIA-002", "in-progress", graph=graph, all_specs=all_specs
         )
         assert not [n for n in result.notices if n.kind == "blocked_start"]
+
+
+# ===========================================================================
+# TestReviewRegressions (post-review fixes)
+# ===========================================================================
+
+
+class TestReviewRegressions:
+    """Regressions for defects surfaced by the adversarial review pass."""
+
+    def test_pending_transition_does_not_start_parent(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        # A child moving TO pending must not promote a pending parent epic.
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="in-progress", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "pending", graph=graph, all_specs=all_specs
+        )
+        assert store.get("DIA-011").meta.status == "pending"
+        assert not any(n.kind == "epic_started" for n in result.notices)
+
+    def test_create_aborted_by_cycle_does_not_reopen_parent(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        # Guard ordering: a completed-cycle abort must not leave the parent
+        # epic reopened.
+        engine = LifecycleEngine(store=store, settings=Settings())
+        seed_spec_file(
+            tmp_specs_dir, "DIA-011", "Epic", spec_type="epic", status="done"
+        )
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Done", status="done", cycle="sprint-1"
+        )
+        all_specs = store.list()
+
+        with pytest.raises(LifecycleError):
+            engine.create_spec(
+                "DIA",
+                "New child",
+                all_specs=all_specs,
+                parent="DIA-011",
+                cycle="sprint-1",
+            )
+        assert store.get("DIA-011").meta.status == "done"
