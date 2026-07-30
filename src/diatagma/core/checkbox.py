@@ -12,8 +12,12 @@ import re
 
 from diatagma.core.models import Spec
 
-_CHECKBOX_RE = re.compile(r"^\s*[-*]\s+\[([ xX])\]\s+(.*)$", re.MULTILINE)
-"""Matches a task-list item, capturing the mark and the label text."""
+_CHECKBOX_RE = re.compile(r"^[ \t]*[-*][ \t]+\[([ xX])\][ \t]+(.*)$", re.MULTILINE)
+"""Matches a task-list item, capturing the mark and the label text.
+
+Whitespace classes are horizontal-only (``[ \\t]``) so an empty-label box
+like ``- [ ]`` cannot swallow the following line as its label.
+"""
 
 
 def _is_placeholder(label: str) -> bool:

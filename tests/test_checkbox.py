@@ -31,3 +31,9 @@ class TestCountCheckboxes:
     def test_non_checkbox_lines_ignored(self):
         text = "## Heading\nsome prose\n- regular bullet\n- [x] task"
         assert count_checkboxes(text) == (1, 1)
+
+    def test_empty_label_box_does_not_swallow_next_line(self):
+        # Regression: `\s+` before the label used to cross the newline, so the
+        # empty box consumed the next checked box as its label.
+        assert count_checkboxes("- [ ]\n- [x] done\n") == (1, 1)
+        assert count_checkboxes("- [x] a\n- [ ]\n- [x] b\n") == (2, 2)
