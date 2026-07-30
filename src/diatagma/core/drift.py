@@ -57,8 +57,15 @@ def git_available(repo_root: Path) -> bool:
 
 
 def _commits_mentioning_specs(repo_root: Path) -> dict[str, list[str]]:
-    """Map each spec ID to short hashes of commits whose message mentions it."""
-    log = _git(["log", "--format=%h%x1f%s%x1f%b%x1e"], repo_root)
+    """Map each spec ID to short hashes of commits whose SUBJECT mentions it.
+
+    Only the subject line is scanned, not the body. Under this repo's
+    conventional-commit convention the ID of the work being done rides in the
+    subject (``feat(x): thing (DIA-042)``); bodies routinely list many IDs for
+    context (spec-file edits, epic child lists, "added notes to DIA-009,
+    DIA-010"), which would otherwise produce false-positive drift.
+    """
+    log = _git(["log", "--format=%h%x1f%s%x1e"], repo_root)
     if not log:
         return {}
     mentions: dict[str, list[str]] = {}
@@ -66,10 +73,8 @@ def _commits_mentioning_specs(repo_root: Path) -> dict[str, list[str]]:
         record = record.strip()
         if not record:
             continue
-        parts = record.split("\x1f")
-        short = parts[0]
-        message = " ".join(parts[1:])
-        for spec_id in set(_SPEC_ID_RE.findall(message)):
+        short, _, subject = record.partition("\x1f")
+        for spec_id in set(_SPEC_ID_RE.findall(subject)):
             mentions.setdefault(spec_id, []).append(short)
     return mentions
 

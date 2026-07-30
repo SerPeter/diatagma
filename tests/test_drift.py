@@ -72,6 +72,21 @@ class TestDetectDrift:
         )
         assert records == []
 
+    def test_body_only_mention_is_not_drift(self, git_repo: Path):
+        # Regression: incidental spec-ID mentions in the commit BODY (e.g. a
+        # commit that edits the spec file or lists epic children) must not be
+        # read as "implemented". Only the subject counts.
+        _commit(
+            git_repo,
+            "docs(specs): rework specs\n\nAdded notes to DIA-001 and DIA-002.",
+        )
+        records = detect_drift(
+            [_spec("DIA-001", status="pending"), _spec("DIA-002", status="pending")],
+            git_repo,
+            today=date(2026, 7, 30),
+        )
+        assert records == []
+
     def test_clean_repo_no_drift(self, git_repo: Path):
         _commit(git_repo, "chore: unrelated commit")
         records = detect_drift(
