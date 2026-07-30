@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import click
 import typer
 
 if TYPE_CHECKING:
@@ -32,18 +31,23 @@ def _introspect_cli() -> list[dict[str, str]]:
     from diatagma.cli.app import app
 
     click_app = typer.main.get_command(app)
-    assert isinstance(click_app, click.Group)
+    # typer >=0.16 vendors its own click (``typer._click``), so the returned
+    # group is not an instance of the standalone ``click.Group``. Duck-type on
+    # ``.commands`` and classify params via ``param_type_name`` ("argument" /
+    # "option"), which is stable across the standalone and vendored click.
+    subcommands = getattr(click_app, "commands", {})
     commands: list[dict[str, str]] = []
 
-    for name, cmd in sorted(click_app.commands.items()):
+    for name, cmd in sorted(subcommands.items()):
         args: list[str] = []
         opts: list[str] = []
         for p in cmd.params:
-            if isinstance(p, click.Argument):
+            ptype = getattr(p, "param_type_name", "")
+            if ptype == "argument":
                 args.append(f"<{p.name}>")
-            elif isinstance(p, click.Option) and p.name != "help":
+            elif ptype == "option" and p.name != "help":
                 primary = p.opts[0] if p.opts else p.name or ""
-                if p.is_flag:
+                if getattr(p, "is_flag", False):
                     opts.append(primary)
                 else:
                     opts.append(f"{primary} <value>")
