@@ -28,6 +28,12 @@ statuses:
   - done
   - cancelled
 
+# Which statuses count as terminal (work finished). Blocking and lifecycle
+# logic treat these as satisfied/closed. Adjust if you rename or add statuses.
+terminal_statuses:
+  - done
+  - cancelled
+
 # Spec types (each has a corresponding template and file extension)
 types:
   - story     # .story.md — unit of deliverable work

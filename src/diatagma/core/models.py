@@ -39,8 +39,18 @@ SPEC_ID_PATTERN = r"^[A-Z]{1,5}-\d{3,}$"
 FIBONACCI_POINTS = (1, 2, 3, 5, 8, 13, 21)
 """Valid story point values (Fibonacci sequence)."""
 
-DEFAULT_STATUSES = ("pending", "in-progress", "in-review", "done", "cancelled")
+DEFAULT_STATUSES = (
+    "pending",
+    "blocked",
+    "in-progress",
+    "in-review",
+    "done",
+    "cancelled",
+)
 """Default spec statuses. Configurable via settings.yaml."""
+
+DEFAULT_TERMINAL_STATUSES = ("done", "cancelled")
+"""Default statuses that count as terminal (work finished). Configurable."""
 
 DEFAULT_TYPES = ("epic", "feature", "bug", "spike", "chore", "docs")
 """Default spec types. Configurable via settings.yaml."""
@@ -201,6 +211,9 @@ class Settings(BaseModel):
     story_point_scale: list[int] = Field(
         default_factory=lambda: list(FIBONACCI_POINTS),
     )
+    terminal_statuses: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_TERMINAL_STATUSES),
+    )
     business_value_range: tuple[int, int] = (-1000, 1000)
     claim_timeout_minutes: int = 30
     auto_complete_parent: bool = True
@@ -209,6 +222,11 @@ class Settings(BaseModel):
     drift_stale_days: int = 14
     web_port: int = 8742
     mcp_transport: str = "stdio"
+
+    @property
+    def terminal_status_set(self) -> frozenset[str]:
+        """Statuses that count as terminal, as a set for membership tests."""
+        return frozenset(self.terminal_statuses)
 
 
 class SchemaFieldConstraint(BaseModel):

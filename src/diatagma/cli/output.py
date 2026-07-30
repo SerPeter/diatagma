@@ -15,7 +15,7 @@ import typer
 from pydantic import BaseModel
 
 from diatagma.core.checkbox import checkbox_progress
-from diatagma.core.models import Notice, Spec
+from diatagma.core.models import DEFAULT_TERMINAL_STATUSES, Notice, Spec
 
 
 def print_json(data: Any) -> None:
@@ -29,7 +29,7 @@ def print_json(data: Any) -> None:
         _echo_safe(json.dumps(data, indent=2, default=str))
 
 
-_TERMINAL_STATUSES = frozenset({"done", "cancelled"})
+_DEFAULT_TERMINAL = frozenset(DEFAULT_TERMINAL_STATUSES)
 
 
 def print_spec_row(
@@ -57,11 +57,13 @@ def print_spec_row(
     _echo_safe("  ".join(parts))
 
 
-def print_epic_children(children: list[Spec]) -> None:
+def print_epic_children(
+    children: list[Spec], terminal_statuses: frozenset[str] = _DEFAULT_TERMINAL
+) -> None:
     """Print an epic's children grouped by status with a progress summary."""
     if not children:
         return
-    done = sum(1 for c in children if c.meta.status in _TERMINAL_STATUSES)
+    done = sum(1 for c in children if c.meta.status in terminal_statuses)
     _echo_safe("")
     _echo_safe(f"  Children ({done}/{len(children)} done):")
     for child in sorted(children, key=lambda c: c.meta.id):

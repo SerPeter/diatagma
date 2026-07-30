@@ -19,10 +19,9 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from diatagma.core.models import Spec
+from diatagma.core.models import DEFAULT_TERMINAL_STATUSES, Spec
 
 _SPEC_ID_RE = re.compile(r"\b[A-Z]{1,5}-\d{3,}\b")
-_TERMINAL_STATUSES = frozenset({"done", "cancelled"})
 
 
 @dataclass(frozen=True)
@@ -96,13 +95,15 @@ def detect_drift(
     *,
     today: date,
     stale_days: int = 14,
+    terminal_statuses: frozenset[str] | None = None,
 ) -> list[DriftRecord]:
     """Return drift records for the given specs against git history."""
+    terminal = terminal_statuses or frozenset(DEFAULT_TERMINAL_STATUSES)
     records: list[DriftRecord] = []
     mentions = _commits_mentioning_specs(repo_root)
 
     for spec in specs:
-        if spec.meta.status in _TERMINAL_STATUSES:
+        if spec.meta.status in terminal:
             continue
 
         commits = mentions.get(spec.meta.id, [])

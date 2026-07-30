@@ -38,8 +38,6 @@ from diatagma.core.models import (
 from diatagma.core.next import get_next
 from diatagma.core.store import SpecStore
 
-_TERMINAL_STATUSES = frozenset({"done", "cancelled"})
-
 
 class LifecycleError(Exception):
     """Raised when a lifecycle guard prevents an operation."""
@@ -92,7 +90,7 @@ class LifecycleEngine:
 
         notices = self._status_notices(updated, new_status, graph, all_specs)
 
-        if new_status not in _TERMINAL_STATUSES:
+        if new_status not in self._settings.terminal_status_set:
             # DIA-031: promote pending parent epics only when a child actually
             # starts work — not on a reset back to pending.
             if new_status == "in-progress":
@@ -117,10 +115,11 @@ class LifecycleEngine:
             self._epic_completion_notices(updated, auto_completed, all_specs)
         )
 
+        terminal = self._settings.terminal_status_set
         ctx = CompletionContext(
-            parent_progress=_parent_progress(updated, all_specs),
-            cycle_progress=_cycle_progress(updated, all_specs),
-            cycle_complete=_cycle_complete(updated, all_specs),
+            parent_progress=_parent_progress(updated, all_specs, terminal),
+            cycle_progress=_cycle_progress(updated, all_specs, terminal),
+            cycle_complete=_cycle_complete(updated, all_specs, terminal),
             newly_unblocked=_newly_unblocked(spec_id, graph),
             next_ready=[s.meta.id for s in get_next(all_specs, graph, n=5)],
             auto_completed_parents=auto_completed,
@@ -162,7 +161,7 @@ class LifecycleEngine:
             active_blockers = [
                 b
                 for b in graph.get_blockers(spec.meta.id)
-                if id_to_status.get(b) not in _TERMINAL_STATUSES
+                if id_to_status.get(b) not in self._settings.terminal_status_set
             ]
             if active_blockers:
                 notices.append(
@@ -234,7 +233,9 @@ class LifecycleEngine:
         if all_specs is None:
             all_specs = self._store.list()
 
-        terminal = [s for s in all_specs if s.meta.status in _TERMINAL_STATUSES]
+        terminal = [
+            s for s in all_specs if s.meta.status in self._settings.terminal_status_set
+        ]
         return self._archive_specs(terminal, agent_id, skip_filter=False)
 
     # --- Consistency validation --------------------------------------------
@@ -317,7 +318,7 @@ class LifecycleEngine:
 
         parent_id = spec.meta.parent
         parent = _find_spec(all_specs, parent_id)
-        if parent is None or parent.meta.status in _TERMINAL_STATUSES:
+        if parent is None or parent.meta.status in self._settings.terminal_status_set:
             return []
 
         # Check if all children of this parent are terminal
@@ -325,7 +326,9 @@ class LifecycleEngine:
         if not children:
             return []
 
-        all_terminal = all(s.meta.status in _TERMINAL_STATUSES for s in children)
+        all_terminal = all(
+            s.meta.status in self._settings.terminal_status_set for s in children
+        )
         if not all_terminal:
             return []
 
@@ -399,10 +402,14 @@ class LifecycleEngine:
         parent_id = spec.meta.parent
         if parent_id and parent_id not in auto_completed:
             parent = _find_spec(all_specs, parent_id)
-            if parent is not None and parent.meta.status not in _TERMINAL_STATUSES:
+            if (
+                parent is not None
+                and parent.meta.status not in self._settings.terminal_status_set
+            ):
                 children = [s for s in all_specs if s.meta.parent == parent_id]
                 if children and all(
-                    c.meta.status in _TERMINAL_STATUSES for c in children
+                    c.meta.status in self._settings.terminal_status_set
+                    for c in children
                 ):
                     notices.append(
                         Notice(
@@ -426,7 +433,7 @@ class LifecycleEngine:
 
         is_archived = self._store.is_archived(parent_id)
 
-        if parent.meta.status not in _TERMINAL_STATUSES:
+        if parent.meta.status not in self._settings.terminal_status_set:
             return  # Parent is active — no guard needed
 
         if is_archived:
@@ -451,7 +458,9 @@ class LifecycleEngine:
         if not cycle_specs:
             return  # Empty or unknown cycle — no guard
 
-        all_terminal = all(s.meta.status in _TERMINAL_STATUSES for s in cycle_specs)
+        all_terminal = all(
+            s.meta.status in self._settings.terminal_status_set for s in cycle_specs
+        )
         if not all_terminal:
             return
 
@@ -474,7 +483,10 @@ class LifecycleEngine:
         warnings: list[str] = []
 
         for spec in specs:
-            if skip_filter and spec.meta.status not in _TERMINAL_STATUSES:
+            if (
+                skip_filter
+                and spec.meta.status not in self._settings.terminal_status_set
+            ):
                 skipped.append(spec.meta.id)
                 warnings.append(
                     f"{spec.meta.id} is {spec.meta.status}, skipping archive"
@@ -511,13 +523,15 @@ class LifecycleEngine:
             epic = specs_by_id.get(epic_id)
             if epic is None:
                 continue
-            if epic.meta.status not in _TERMINAL_STATUSES:
+            if epic.meta.status not in self._settings.terminal_status_set:
                 continue
             if epic.meta.type != "epic":
                 continue
 
             non_terminal = [
-                c for c in children if c.meta.status not in _TERMINAL_STATUSES
+                c
+                for c in children
+                if c.meta.status not in self._settings.terminal_status_set
             ]
             if not non_terminal:
                 continue
@@ -554,9 +568,15 @@ class LifecycleEngine:
                 by_cycle.setdefault(spec.meta.cycle, []).append(spec)
 
         for cycle_name, cycle_specs in by_cycle.items():
-            terminal = [s for s in cycle_specs if s.meta.status in _TERMINAL_STATUSES]
+            terminal = [
+                s
+                for s in cycle_specs
+                if s.meta.status in self._settings.terminal_status_set
+            ]
             non_terminal = [
-                s for s in cycle_specs if s.meta.status not in _TERMINAL_STATUSES
+                s
+                for s in cycle_specs
+                if s.meta.status not in self._settings.terminal_status_set
             ]
 
             # Only flag if there's a mix AND the cycle has an end date that's passed
@@ -606,11 +626,13 @@ class LifecycleEngine:
             epic = specs_by_id.get(epic_id)
             if epic is None or epic.meta.type != "epic":
                 continue
-            if epic.meta.status in _TERMINAL_STATUSES:
+            if epic.meta.status in self._settings.terminal_status_set:
                 continue
             if self._store.is_archived(epic_id):
                 continue
-            if not all(c.meta.status in _TERMINAL_STATUSES for c in children):
+            if not all(
+                c.meta.status in self._settings.terminal_status_set for c in children
+            ):
                 continue
 
             msg = f"{epic_id} has all children terminal but is still {epic.meta.status}"
@@ -716,7 +738,9 @@ def _patch_status_in_list(specs: list[Spec], spec_id: str, status: str) -> None:
             return
 
 
-def _parent_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
+def _parent_progress(
+    spec: Spec, all_specs: list[Spec], terminal: frozenset[str]
+) -> str | None:
     """Build parent progress string like '4/8 stories in DIA-011 done'."""
     if not spec.meta.parent:
         return None
@@ -726,11 +750,13 @@ def _parent_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
     if not siblings:
         return None
 
-    done_count = sum(1 for s in siblings if s.meta.status in _TERMINAL_STATUSES)
+    done_count = sum(1 for s in siblings if s.meta.status in terminal)
     return f"{done_count}/{len(siblings)} stories in {parent_id} done"
 
 
-def _cycle_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
+def _cycle_progress(
+    spec: Spec, all_specs: list[Spec], terminal: frozenset[str]
+) -> str | None:
     """Build cycle progress string like '6/10 specs in Cycle 1 done'."""
     if not spec.meta.cycle:
         return None
@@ -739,11 +765,13 @@ def _cycle_progress(spec: Spec, all_specs: list[Spec]) -> str | None:
     if not cycle_specs:
         return None
 
-    done_count = sum(1 for s in cycle_specs if s.meta.status in _TERMINAL_STATUSES)
+    done_count = sum(1 for s in cycle_specs if s.meta.status in terminal)
     return f"{done_count}/{len(cycle_specs)} specs in {spec.meta.cycle} done"
 
 
-def _cycle_complete(spec: Spec, all_specs: list[Spec]) -> bool:
+def _cycle_complete(
+    spec: Spec, all_specs: list[Spec], terminal: frozenset[str]
+) -> bool:
     """True if all specs in the spec's cycle are terminal."""
     if not spec.meta.cycle:
         return False
@@ -752,7 +780,7 @@ def _cycle_complete(spec: Spec, all_specs: list[Spec]) -> bool:
     if not cycle_specs:
         return False
 
-    return all(s.meta.status in _TERMINAL_STATUSES for s in cycle_specs)
+    return all(s.meta.status in terminal for s in cycle_specs)
 
 
 def _newly_unblocked(spec_id: str, graph: SpecGraph) -> list[SpecId]:

@@ -422,3 +422,31 @@ class TestEdgeTypeCollision:
             ]
         )
         assert graph.is_blocked("DIA-010") is False
+
+
+class TestConfigurableTerminalStatuses:
+    """Blocking respects the terminal set passed at build(), not a hardcode."""
+
+    def test_custom_terminal_set(self):
+        # "complete" is terminal here; the built-in "done" is NOT.
+        graph = SpecGraph()
+        graph.build(
+            [
+                _spec("DIA-001", status="complete"),
+                _spec("DIA-002", status="pending", blocked_by=["DIA-001"]),
+                _spec("DIA-003", status="done"),
+                _spec("DIA-004", status="pending", blocked_by=["DIA-003"]),
+            ],
+            terminal_statuses=frozenset({"complete"}),
+        )
+        # DIA-001 is complete (terminal) → DIA-002 unblocked
+        assert graph.is_blocked("DIA-002") is False
+        # DIA-003 is done, NOT terminal in this config → DIA-004 blocked
+        assert graph.is_blocked("DIA-004") is True
+
+    def test_default_terminal_set(self):
+        graph = SpecGraph()
+        graph.build(
+            [_spec("DIA-001", status="done"), _spec("DIA-002", blocked_by=["DIA-001"])]
+        )
+        assert graph.is_blocked("DIA-002") is False

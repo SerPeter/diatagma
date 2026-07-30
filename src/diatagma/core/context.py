@@ -46,7 +46,9 @@ class DiatagmaContext:
             if specs is not None
             else self.store.list(include_archive=include_archive)
         )
-        self.graph.build(all_specs)
+        self.graph.build(
+            all_specs, terminal_statuses=self.config.settings.terminal_status_set
+        )
         return all_specs
 
 

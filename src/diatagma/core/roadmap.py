@@ -34,8 +34,9 @@ _FENCE_RE = re.compile(
     re.DOTALL,
 )
 
-_DONE_STATUSES = frozenset({"done", "cancelled"})
 _ACTIVE_STATUSES = frozenset({"in-progress", "in-review"})
+"""In-flight statuses for the epics table's Active column (display only).
+Terminal statuses come from config; see Settings.terminal_status_set."""
 
 
 def _fence(tag: str, content: str) -> str:
@@ -113,7 +114,9 @@ def _render_meta(
     return _fence("meta", "\n".join(lines))
 
 
-def _render_epics_table(epics: list[Spec], all_specs: list[Spec]) -> str:
+def _render_epics_table(
+    epics: list[Spec], all_specs: list[Spec], terminal: frozenset[str]
+) -> str:
     """Render the epics overview table."""
     lines = [
         "| Epic | Status | Pending | Active | Done |",
@@ -124,11 +127,10 @@ def _render_epics_table(epics: list[Spec], all_specs: list[Spec]) -> str:
         pending = sum(
             1
             for s in children
-            if s.meta.status not in _DONE_STATUSES
-            and s.meta.status not in _ACTIVE_STATUSES
+            if s.meta.status not in terminal and s.meta.status not in _ACTIVE_STATUSES
         )
         active = sum(1 for s in children if s.meta.status in _ACTIVE_STATUSES)
-        done = sum(1 for s in children if s.meta.status in _DONE_STATUSES)
+        done = sum(1 for s in children if s.meta.status in terminal)
         lines.append(
             f"| {epic.meta.id}: {epic.meta.title} "
             f"| {epic.meta.status} | {pending} | {active} | {done} |"
@@ -136,11 +138,11 @@ def _render_epics_table(epics: list[Spec], all_specs: list[Spec]) -> str:
     return _fence("epics", "\n".join(lines))
 
 
-def _render_cycle_specs(specs: list[Spec]) -> str:
+def _render_cycle_specs(specs: list[Spec], terminal: frozenset[str]) -> str:
     """Render a checkbox list of specs sorted by ID."""
     lines: list[str] = []
     for spec in sorted(specs, key=_id_sort_key):
-        check = "x" if spec.meta.status in _DONE_STATUSES else " "
+        check = "x" if spec.meta.status in terminal else " "
         suffix = " (epic)" if spec.meta.type == "epic" else ""
         lines.append(f"- [{check}] {spec.meta.id}: {spec.meta.title}{suffix}")
     return "\n".join(lines) if lines else "*No specs in this cycle.*"
@@ -188,6 +190,7 @@ def generate_roadmap(
     archived_count = len(archived_specs)
 
     epics = [s for s in all_specs if s.meta.type == "epic"]
+    terminal = config.settings.terminal_status_set
 
     cycles = config.cycles
     cur = _current_cycle(cycles, today)
@@ -204,7 +207,7 @@ def generate_roadmap(
     if epics:
         sections.append("## Epics")
         sections.append("")
-        sections.append(_render_epics_table(epics, all_specs))
+        sections.append(_render_epics_table(epics, all_specs, terminal))
         sections.append("")
 
     # Current cycle
@@ -213,13 +216,17 @@ def generate_roadmap(
         heading = f"## Current Cycle: {cur.name}"
         sections.append(heading)
         sections.append("")
-        sections.append(_fence("cycle:current", _render_cycle_specs(cycle_specs)))
+        sections.append(
+            _fence("cycle:current", _render_cycle_specs(cycle_specs, terminal))
+        )
         sections.append("")
     else:
         # No cycles — show all root specs
         sections.append("## Current Cycle")
         sections.append("")
-        sections.append(_fence("cycle:current", _render_cycle_specs(root_specs)))
+        sections.append(
+            _fence("cycle:current", _render_cycle_specs(root_specs, terminal))
+        )
         sections.append("")
 
     # Next cycle
@@ -228,7 +235,7 @@ def generate_roadmap(
         heading = f"## Next Cycle: {nxt.name}"
         sections.append(heading)
         sections.append("")
-        sections.append(_fence("cycle:next", _render_cycle_specs(next_specs)))
+        sections.append(_fence("cycle:next", _render_cycle_specs(next_specs, terminal)))
         sections.append("")
 
     return "\n".join(sections)
@@ -257,6 +264,8 @@ def generate_roadmap_json(
     cur = _current_cycle(cycles, today)
     nxt = _next_cycle(cycles, cur)
 
+    terminal = config.settings.terminal_status_set
+
     def _epic_summary(epic: Spec) -> dict:
         children = [s for s in all_specs if s.meta.parent == epic.meta.id]
         return {
@@ -266,11 +275,11 @@ def generate_roadmap_json(
             "pending": sum(
                 1
                 for s in children
-                if s.meta.status not in _DONE_STATUSES
+                if s.meta.status not in terminal
                 and s.meta.status not in _ACTIVE_STATUSES
             ),
             "active": sum(1 for s in children if s.meta.status in _ACTIVE_STATUSES),
-            "done": sum(1 for s in children if s.meta.status in _DONE_STATUSES),
+            "done": sum(1 for s in children if s.meta.status in terminal),
         }
 
     def _spec_entry(s: Spec) -> dict:

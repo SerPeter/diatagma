@@ -11,8 +11,6 @@ from diatagma.cli.output import print_error, print_json, print_success, print_wa
 from diatagma.cli.state import GlobalState
 from diatagma.core.store import SpecNotFoundError
 
-_TERMINAL_STATUSES = ("done", "cancelled")
-
 
 @app.command()
 def archive(
@@ -77,7 +75,7 @@ def _archive_single(spec_id: str, force: bool) -> None:
     except SpecNotFoundError:
         print_error(f"{spec_id} not found.")
 
-    is_terminal = spec.meta.status in _TERMINAL_STATUSES
+    is_terminal = spec.meta.status in ctx.config.settings.terminal_status_set
     if not is_terminal and not force:
         print_error(
             f"{spec_id} is {spec.meta.status}, not terminal. "

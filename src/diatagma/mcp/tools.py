@@ -216,7 +216,9 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         # then build graph from it
         ctx = create_context(specs_dir)
         all_specs = cache.query()
-        ctx.graph.build(all_specs)
+        ctx.graph.build(
+            all_specs, terminal_statuses=ctx.config.settings.terminal_status_set
+        )
 
         ready = get_next(
             all_specs,
@@ -446,5 +448,7 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         _ensure_warm(cache, specs_dir)
         ctx = create_context(specs_dir)
         all_specs = cache.query()
-        ctx.graph.build(all_specs)
+        ctx.graph.build(
+            all_specs, terminal_statuses=ctx.config.settings.terminal_status_set
+        )
         return ctx.graph.to_dict()

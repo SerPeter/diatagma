@@ -110,6 +110,18 @@ class TestLoadSettings:
         assert settings.claim_timeout_minutes == 60
         assert settings.web_port == 8742  # default preserved
 
+    def test_terminal_statuses_default(self, tmp_path: Path) -> None:
+        settings = _load_settings(tmp_path)
+        assert settings.terminal_status_set == frozenset({"done", "cancelled"})
+
+    def test_terminal_statuses_override(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path / "settings.yaml",
+            "terminal_statuses:\n  - complete\n  - wontfix\n",
+        )
+        settings = _load_settings(tmp_path)
+        assert settings.terminal_status_set == frozenset({"complete", "wontfix"})
+
     def test_invalid_settings_raises(self, tmp_path: Path) -> None:
         _write(tmp_path / "settings.yaml", "web_port: not-a-number\n")
         with pytest.raises(ConfigError, match="invalid settings.yaml"):

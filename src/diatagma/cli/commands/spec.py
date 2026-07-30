@@ -132,12 +132,13 @@ def show(
         print_spec_detail(spec, blocker_statuses=id_to_status, dependents=dependents)
         if spec.meta.type == "epic":
             children = [s for s in all_specs if s.meta.parent == spec_id]
-            print_epic_children(children)
+            print_epic_children(children, ctx.config.settings.terminal_status_set)
 
 
-def _epic_progress_map(all_specs: list) -> dict[str, tuple[int, int]]:
+def _epic_progress_map(
+    all_specs: list, terminal: frozenset[str]
+) -> dict[str, tuple[int, int]]:
     """Map each parent ID to (done_children, total_children)."""
-    terminal = {"done", "cancelled"}
     by_parent: dict[str, list] = {}
     for spec in all_specs:
         if spec.meta.parent:
@@ -188,13 +189,14 @@ def list_specs(
             print_success("No specs found.")
             return
         all_specs = ctx.refresh_graph(include_archive=True)
+        terminal = ctx.config.settings.terminal_status_set
         id_to_status = {s.meta.id: s.meta.status for s in all_specs}
-        progress = _epic_progress_map(all_specs)
+        progress = _epic_progress_map(all_specs, terminal)
         for spec in specs:
             active_blockers = [
                 b
                 for b in ctx.graph.get_blockers(spec.meta.id)
-                if id_to_status.get(b) not in ("done", "cancelled")
+                if id_to_status.get(b) not in terminal
             ]
             print_spec_row(
                 spec,
@@ -263,7 +265,7 @@ def status(
         print_error(str(e))
 
     if archive:
-        if new_status in ("done", "cancelled"):
+        if new_status in ctx.config.settings.terminal_status_set:
             ctx.store.move_to_archive(spec_id, agent_id="cli")
         else:
             print_warning(

@@ -30,13 +30,14 @@ from enum import Enum
 
 import networkx as nx
 
-from diatagma.core.models import Spec
+from diatagma.core.models import DEFAULT_TERMINAL_STATUSES, Spec
 
 # ---------------------------------------------------------------------------
 # Edge types
 # ---------------------------------------------------------------------------
 
-_DONE_STATUSES = frozenset({"done", "cancelled"})
+_DEFAULT_TERMINAL_STATUSES = frozenset(DEFAULT_TERMINAL_STATUSES)
+"""Library fallback; real usage sets the terminal set from config at build()."""
 
 
 class EdgeType(str, Enum):
@@ -72,16 +73,23 @@ class SpecGraph:
 
     def __init__(self) -> None:
         self._graph: nx.DiGraph = nx.DiGraph()
+        self._terminal_statuses: frozenset[str] = _DEFAULT_TERMINAL_STATUSES
 
     # --- Build -------------------------------------------------------------
 
-    def build(self, specs: list[Spec]) -> None:
+    def build(
+        self, specs: list[Spec], terminal_statuses: frozenset[str] | None = None
+    ) -> None:
         """Populate the graph from a list of specs.
 
         Clears any existing data first. Nodes carry a ``status`` attribute;
-        edges carry an ``edge_type`` attribute.
+        edges carry an ``edge_type`` attribute. ``terminal_statuses`` (from
+        config) drives blocked/unblocked computation; if omitted the previously
+        set (or default) terminal set is kept.
         """
         self._graph.clear()
+        if terminal_statuses is not None:
+            self._terminal_statuses = frozenset(terminal_statuses)
 
         for spec in specs:
             self._graph.add_node(spec.meta.id, status=spec.meta.status)
@@ -136,25 +144,25 @@ class SpecGraph:
         ]
 
     def is_blocked(
-        self, spec_id: str, done_statuses: frozenset[str] = _DONE_STATUSES
+        self, spec_id: str, done_statuses: frozenset[str] | None = None
     ) -> bool:
-        """True if any blocker has a status not in *done_statuses*."""
+        """True if any blocker has a status not in the terminal set."""
+        done = self._terminal_statuses if done_statuses is None else done_statuses
         for blocker in self.get_blockers(spec_id):
             status = self._graph.nodes[blocker].get("status", "pending")
-            if status not in done_statuses:
+            if status not in done:
                 return True
         return False
 
-    def get_unblocked(
-        self, done_statuses: frozenset[str] = _DONE_STATUSES
-    ) -> list[str]:
-        """Spec IDs that are not blocked and not done/cancelled themselves."""
+    def get_unblocked(self, done_statuses: frozenset[str] | None = None) -> list[str]:
+        """Spec IDs that are not blocked and not terminal themselves."""
+        done = self._terminal_statuses if done_statuses is None else done_statuses
         result: list[str] = []
         for node in self._graph.nodes:
             status = self._graph.nodes[node].get("status", "pending")
-            if status in done_statuses:
+            if status in done:
                 continue
-            if not self.is_blocked(node, done_statuses):
+            if not self.is_blocked(node, done):
                 result.append(node)
         return sorted(result)
 
