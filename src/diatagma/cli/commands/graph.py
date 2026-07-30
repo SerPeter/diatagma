@@ -45,12 +45,21 @@ def _scope_ids(
     return scope
 
 
-def _filter_scope(data: dict, visible: set[str]) -> dict:
-    """Restrict a graph dict to visible nodes and the edges among them."""
+def _filter_scope(data: dict, visible: set[str], terminal: frozenset[str]) -> dict:
+    """Restrict a graph dict to visible nodes and live edges among them.
+
+    Blocking edges whose blocker is already terminal are dropped (satisfied),
+    so json/dot match the tree/mermaid live-edge view.
+    """
+    status = {n["id"]: n["status"] for n in data["nodes"]}
     nodes = [n for n in data["nodes"] if n["id"] in visible]
-    edges = [
-        e for e in data["edges"] if e["source"] in visible and e["target"] in visible
-    ]
+    edges = []
+    for edge in data["edges"]:
+        if edge["source"] not in visible or edge["target"] not in visible:
+            continue
+        if edge["type"] == "blocked_by" and status.get(edge["source"]) in terminal:
+            continue
+        edges.append(edge)
     return {"nodes": nodes, "edges": edges}
 
 
@@ -88,9 +97,9 @@ def graph(
     elif format == "tree":
         typer.echo(to_tree(ctx.graph, terminal, visible))
     elif format == "dot":
-        typer.echo(_to_dot(_filter_scope(ctx.graph.to_dict(), visible)))
+        typer.echo(_to_dot(_filter_scope(ctx.graph.to_dict(), visible, terminal)))
     else:
-        print_json(_filter_scope(ctx.graph.to_dict(), visible))
+        print_json(_filter_scope(ctx.graph.to_dict(), visible, terminal))
 
 
 def _to_dot(data: dict) -> str:

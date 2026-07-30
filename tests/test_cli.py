@@ -652,3 +652,26 @@ class TestGraphScope:
         node = {n["id"]: n for n in data["nodes"]}
         assert "DIA-051" in node  # pulled in: it blocks active DIA-052
         assert node["DIA-051"]["location"] == "backlog"
+
+    def test_json_drops_satisfied_edges(self, populated_specs):
+        # Even in --full, a done blocker's blocking edge is dropped (satisfied),
+        # matching the tree/mermaid live-edge view.
+        (populated_specs / "archive").mkdir(exist_ok=True)
+        seed_spec_file(
+            populated_specs / "archive", "DIA-060", "Done blocker", status="done"
+        )
+        seed_spec_file(
+            populated_specs,
+            "DIA-061",
+            "Active blocked",
+            status="pending",
+            links={"blocked_by": ["DIA-060"]},
+        )
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "graph", "--full"]
+        )
+        data = json.loads(result.output)
+        ids = [n["id"] for n in data["nodes"]]
+        assert "DIA-060" in ids  # node visible under --full
+        edges = [(e["source"], e["target"]) for e in data["edges"]]
+        assert ("DIA-060", "DIA-061") not in edges  # satisfied edge dropped
