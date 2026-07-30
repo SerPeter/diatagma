@@ -20,6 +20,13 @@ terminal_statuses:
   - done
   - cancelled
 
+# Which statuses count as in-flight (work underway). Drives the roadmap Active
+# column, epic auto-start, and drift staleness. The first entry is the status a
+# parent epic is promoted to when a child starts work.
+active_statuses:
+  - in-progress
+  - in-review
+
 # Spec types (each has a corresponding template and file extension)
 types:
   - story     # .story.md — unit of deliverable work

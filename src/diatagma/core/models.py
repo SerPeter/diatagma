@@ -52,6 +52,10 @@ DEFAULT_STATUSES = (
 DEFAULT_TERMINAL_STATUSES = ("done", "cancelled")
 """Default statuses that count as terminal (work finished). Configurable."""
 
+DEFAULT_ACTIVE_STATUSES = ("in-progress", "in-review")
+"""Default statuses that count as in-flight (work underway). Configurable.
+Order matters: the first is used when auto-promoting a parent epic."""
+
 DEFAULT_TYPES = ("epic", "feature", "bug", "spike", "chore", "docs")
 """Default spec types. Configurable via settings.yaml."""
 
@@ -214,6 +218,9 @@ class Settings(BaseModel):
     terminal_statuses: list[str] = Field(
         default_factory=lambda: list(DEFAULT_TERMINAL_STATUSES),
     )
+    active_statuses: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_ACTIVE_STATUSES),
+    )
     business_value_range: tuple[int, int] = (-1000, 1000)
     claim_timeout_minutes: int = 30
     auto_complete_parent: bool = True
@@ -227,6 +234,16 @@ class Settings(BaseModel):
     def terminal_status_set(self) -> frozenset[str]:
         """Statuses that count as terminal, as a set for membership tests."""
         return frozenset(self.terminal_statuses)
+
+    @property
+    def active_status_set(self) -> frozenset[str]:
+        """Statuses that count as in-flight, as a set for membership tests."""
+        return frozenset(self.active_statuses)
+
+    @property
+    def started_status(self) -> str:
+        """The status a parent is promoted to when a child starts work."""
+        return self.active_statuses[0] if self.active_statuses else "in-progress"
 
 
 class SchemaFieldConstraint(BaseModel):

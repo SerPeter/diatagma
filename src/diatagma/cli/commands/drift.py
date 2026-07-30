@@ -32,6 +32,7 @@ def drift() -> None:
         today=date.today(),
         stale_days=ctx.config.settings.drift_stale_days,
         terminal_statuses=ctx.config.settings.terminal_status_set,
+        active_statuses=ctx.config.settings.active_status_set,
     )
 
     if GlobalState.json:

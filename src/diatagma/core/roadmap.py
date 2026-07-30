@@ -34,10 +34,6 @@ _FENCE_RE = re.compile(
     re.DOTALL,
 )
 
-_ACTIVE_STATUSES = frozenset({"in-progress", "in-review"})
-"""In-flight statuses for the epics table's Active column (display only).
-Terminal statuses come from config; see Settings.terminal_status_set."""
-
 
 def _fence(tag: str, content: str) -> str:
     """Wrap *content* in marker fences for the given tag."""
@@ -115,7 +111,10 @@ def _render_meta(
 
 
 def _render_epics_table(
-    epics: list[Spec], all_specs: list[Spec], terminal: frozenset[str]
+    epics: list[Spec],
+    all_specs: list[Spec],
+    terminal: frozenset[str],
+    active_set: frozenset[str],
 ) -> str:
     """Render the epics overview table."""
     lines = [
@@ -127,9 +126,9 @@ def _render_epics_table(
         pending = sum(
             1
             for s in children
-            if s.meta.status not in terminal and s.meta.status not in _ACTIVE_STATUSES
+            if s.meta.status not in terminal and s.meta.status not in active_set
         )
-        active = sum(1 for s in children if s.meta.status in _ACTIVE_STATUSES)
+        active = sum(1 for s in children if s.meta.status in active_set)
         done = sum(1 for s in children if s.meta.status in terminal)
         lines.append(
             f"| {epic.meta.id}: {epic.meta.title} "
@@ -191,6 +190,7 @@ def generate_roadmap(
 
     epics = [s for s in all_specs if s.meta.type == "epic"]
     terminal = config.settings.terminal_status_set
+    active_set = config.settings.active_status_set
 
     cycles = config.cycles
     cur = _current_cycle(cycles, today)
@@ -207,7 +207,7 @@ def generate_roadmap(
     if epics:
         sections.append("## Epics")
         sections.append("")
-        sections.append(_render_epics_table(epics, all_specs, terminal))
+        sections.append(_render_epics_table(epics, all_specs, terminal, active_set))
         sections.append("")
 
     # Current cycle
@@ -265,6 +265,7 @@ def generate_roadmap_json(
     nxt = _next_cycle(cycles, cur)
 
     terminal = config.settings.terminal_status_set
+    active_set = config.settings.active_status_set
 
     def _epic_summary(epic: Spec) -> dict:
         children = [s for s in all_specs if s.meta.parent == epic.meta.id]
@@ -275,10 +276,9 @@ def generate_roadmap_json(
             "pending": sum(
                 1
                 for s in children
-                if s.meta.status not in terminal
-                and s.meta.status not in _ACTIVE_STATUSES
+                if s.meta.status not in terminal and s.meta.status not in active_set
             ),
-            "active": sum(1 for s in children if s.meta.status in _ACTIVE_STATUSES),
+            "active": sum(1 for s in children if s.meta.status in active_set),
             "done": sum(1 for s in children if s.meta.status in terminal),
         }
 

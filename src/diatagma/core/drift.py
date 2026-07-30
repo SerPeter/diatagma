@@ -4,8 +4,8 @@ Read-only. Two kinds of drift are reported:
 
 - ``implemented_not_marked`` — a non-terminal spec whose ID is referenced by a
   commit message (work was committed but ``diatagma status ... done`` skipped).
-- ``stale_in_progress`` — an in-progress spec whose file hasn't been touched by
-  a commit within ``stale_days``.
+- ``stale_active`` — an in-flight (active) spec whose file hasn't been touched
+  by a commit within ``stale_days``.
 
 Git is invoked via subprocess; if it is unavailable the functions degrade to
 empty results rather than raising, and :func:`git_available` lets callers warn.
@@ -19,7 +19,11 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from diatagma.core.models import DEFAULT_TERMINAL_STATUSES, Spec
+from diatagma.core.models import (
+    DEFAULT_ACTIVE_STATUSES,
+    DEFAULT_TERMINAL_STATUSES,
+    Spec,
+)
 
 _SPEC_ID_RE = re.compile(r"\b[A-Z]{1,5}-\d{3,}\b")
 
@@ -96,9 +100,11 @@ def detect_drift(
     today: date,
     stale_days: int = 14,
     terminal_statuses: frozenset[str] | None = None,
+    active_statuses: frozenset[str] | None = None,
 ) -> list[DriftRecord]:
     """Return drift records for the given specs against git history."""
     terminal = terminal_statuses or frozenset(DEFAULT_TERMINAL_STATUSES)
+    active = active_statuses or frozenset(DEFAULT_ACTIVE_STATUSES)
     records: list[DriftRecord] = []
     mentions = _commits_mentioning_specs(repo_root)
 
@@ -117,7 +123,7 @@ def detect_drift(
                 )
             )
 
-        if spec.meta.status == "in-progress" and spec.file_path is not None:
+        if spec.meta.status in active and spec.file_path is not None:
             last = _last_commit_date(spec.file_path, repo_root)
             if last is not None:
                 age = (today - last).days
@@ -125,8 +131,11 @@ def detect_drift(
                     records.append(
                         DriftRecord(
                             spec_id=spec.meta.id,
-                            kind="stale_in_progress",
-                            detail=f"in-progress with no commits touching it in {age} days",
+                            kind="stale_active",
+                            detail=(
+                                f"{spec.meta.status} with no commits touching it "
+                                f"in {age} days"
+                            ),
                         )
                     )
 

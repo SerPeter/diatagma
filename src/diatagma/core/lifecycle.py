@@ -92,8 +92,8 @@ class LifecycleEngine:
 
         if new_status not in self._settings.terminal_status_set:
             # DIA-031: promote pending parent epics only when a child actually
-            # starts work — not on a reset back to pending.
-            if new_status == "in-progress":
+            # starts work (moves into an in-flight status) — not on a reset.
+            if new_status in self._settings.active_status_set:
                 started = self._auto_start_parents(spec_id, agent_id, all_specs, graph)
                 for epic_id in started:
                     notices.append(
@@ -156,7 +156,7 @@ class LifecycleEngine:
                 )
 
         # DIA-026: starting a spec whose blockers are not yet terminal
-        if new_status == "in-progress":
+        if new_status in self._settings.active_status_set:
             id_to_status = {s.meta.id: s.meta.status for s in all_specs}
             active_blockers = [
                 b
@@ -350,9 +350,11 @@ class LifecycleEngine:
         all_specs: list[Spec],
         graph: SpecGraph,
     ) -> list[str]:
-        """Promote pending parents to in-progress when a child starts.
+        """Promote pending parents to the started status when a child starts.
 
-        Mirrors ``_auto_complete_parents`` upward. Returns started IDs.
+        Mirrors ``_auto_complete_parents`` upward. Returns started IDs. Only a
+        genuinely not-started (``pending``) parent is promoted — a blocked or
+        already-active parent is left as-is.
         """
         if not self._settings.auto_start_parent:
             return []
@@ -366,9 +368,10 @@ class LifecycleEngine:
         if parent is None or parent.meta.status != "pending":
             return []
 
-        self._store.update(parent_id, agent_id=agent_id, status="in-progress")
-        graph.update_node_status(parent_id, "in-progress")
-        _patch_status_in_list(all_specs, parent_id, "in-progress")
+        started = self._settings.started_status
+        self._store.update(parent_id, agent_id=agent_id, status=started)
+        graph.update_node_status(parent_id, started)
+        _patch_status_in_list(all_specs, parent_id, started)
         logger.info("{} auto-started (child {} began)", parent_id, spec_id)
 
         return [parent_id] + self._auto_start_parents(
@@ -442,12 +445,15 @@ class LifecycleEngine:
                     f"{parent_id} is archived. Use --reopen to unarchive and reopen it.",
                     spec_id=parent_id,
                 )
+            started = self._settings.started_status
             self._store.restore_from_archive(parent_id, agent_id)
-            self._store.update(parent_id, agent_id=agent_id, status="in-progress")
+            self._store.update(parent_id, agent_id=agent_id, status=started)
             logger.info("{} restored from archive and reopened", parent_id)
         else:
             # Done but not archived — auto-reopen
-            self._store.update(parent_id, agent_id=agent_id, status="in-progress")
+            self._store.update(
+                parent_id, agent_id=agent_id, status=self._settings.started_status
+            )
             logger.info("{} reopened (new child added)", parent_id)
 
     def _guard_cycle(
@@ -539,7 +545,9 @@ class LifecycleEngine:
             # Auto-reopen
             child_ids = ", ".join(c.meta.id for c in non_terminal)
             msg = f"{epic_id} reopened (non-terminal children detected: {child_ids})"
-            self._store.update(epic_id, agent_id=agent_id, status="in-progress")
+            self._store.update(
+                epic_id, agent_id=agent_id, status=self._settings.started_status
+            )
             logger.info(msg)
 
             issues.append(

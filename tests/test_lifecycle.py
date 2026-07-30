@@ -1010,3 +1010,60 @@ class TestReviewRegressions:
                 cycle="sprint-1",
             )
         assert store.get("DIA-011").meta.status == "done"
+
+
+# ===========================================================================
+# TestActiveStatusConfig (config-driven in-flight statuses)
+# ===========================================================================
+
+
+class TestActiveStatusConfig:
+    """Auto-start / promotion honor the configured active statuses."""
+
+    def test_in_review_transition_starts_parent(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        # in-review is in the default active set, so it starts the parent.
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="pending", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "in-review", graph=graph, all_specs=all_specs
+        )
+        assert store.get("DIA-011").meta.status == "in-progress"  # started_status
+        assert any(n.kind == "epic_started" for n in result.notices)
+
+    def test_custom_active_status_promotes_to_first(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        engine = LifecycleEngine(
+            store=store, settings=Settings(active_statuses=["doing", "reviewing"])
+        )
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="pending", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        engine.update_status("DIA-001", "doing", graph=graph, all_specs=all_specs)
+        assert store.get("DIA-011").meta.status == "doing"  # first active status
+
+    def test_non_active_transition_does_not_start(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        # A status outside the active set (here "blocked") must not start it.
+        engine = LifecycleEngine(store=store, settings=Settings())
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="pending", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        engine.update_status("DIA-001", "blocked", graph=graph, all_specs=all_specs)
+        assert store.get("DIA-011").meta.status == "pending"

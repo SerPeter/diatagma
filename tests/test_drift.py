@@ -109,7 +109,7 @@ class TestDetectDrift:
             today=date(2026, 7, 30),
             stale_days=14,
         )
-        assert any(r.kind == "stale_in_progress" for r in records)
+        assert any(r.kind == "stale_active" for r in records)
 
     def test_not_stale_within_threshold(self, git_repo: Path):
         specfile = git_repo / "DIA-003-x.story.md"
@@ -126,7 +126,7 @@ class TestDetectDrift:
             today=date(2026, 7, 30),
             stale_days=14,
         )
-        assert not any(r.kind == "stale_in_progress" for r in records)
+        assert not any(r.kind == "stale_active" for r in records)
 
     def test_git_unavailable_returns_empty(self, tmp_path: Path):
         records = detect_drift(
