@@ -73,6 +73,27 @@ def _attach_lifecycle(detail: dict, result) -> dict:
     return detail
 
 
+def _recache_parents(ctx, cache: SpecCache, result) -> None:
+    """Re-cache parent epics the lifecycle mutated (auto-complete / auto-start).
+
+    ``update_status`` writes parent files directly; without re-caching, their
+    stale-mtime cache rows are silently dropped from every cache-backed read.
+    """
+    if result is None:
+        return
+    affected: set[str] = set()
+    if result.completion:
+        affected.update(result.completion.auto_completed_parents)
+    for notice in result.notices:
+        if notice.kind in ("epic_started", "epic_completed"):
+            affected.add(notice.spec_id)
+    for spec_id in affected:
+        try:
+            cache.put(ctx.store.get(spec_id))
+        except Exception:
+            pass
+
+
 def _encode_cursor(offset: int) -> str:
     return base64.urlsafe_b64encode(json.dumps({"o": offset}).encode()).decode()
 
@@ -323,6 +344,7 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
 
         assert spec is not None  # guaranteed: raised above if nothing to change
         cache.put(spec)
+        _recache_parents(ctx, cache, result)
         return _attach_lifecycle(_spec_detail(spec), result)
 
     @mcp.tool(
@@ -352,6 +374,7 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
             all_specs=all_specs,
         )
         cache.put(result.spec)
+        _recache_parents(ctx, cache, result)
         return _attach_lifecycle(_spec_detail(result.spec), result)
 
     @mcp.tool(

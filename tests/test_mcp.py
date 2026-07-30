@@ -222,6 +222,27 @@ class TestUpdateSpec:
         data = json.loads(result.content[0].text)
         assert data["meta"]["status"] == "in-progress"
 
+    async def test_auto_completed_parent_stays_in_cache(self, mcp_client):
+        # Regression: auto-completing an epic over MCP must re-cache the parent,
+        # or its stale-mtime row is dropped from cache-backed reads.
+        epic = await mcp_client.call_tool(
+            "create_spec", {"title": "Epic", "prefix": "TST", "type": "epic"}
+        )
+        epic_id = json.loads(epic.content[0].text)["meta"]["id"]
+        child = await mcp_client.call_tool(
+            "create_spec", {"title": "Child", "prefix": "TST", "parent": epic_id}
+        )
+        child_id = json.loads(child.content[0].text)["meta"]["id"]
+
+        await mcp_client.call_tool("list_specs", {})  # warm the cache
+        await mcp_client.call_tool(
+            "update_spec", {"spec_id": child_id, "status": "done"}
+        )
+
+        done = await mcp_client.call_tool("list_specs", {"status": "done"})
+        ids = [s["id"] for s in json.loads(done.content[0].text)["specs"]]
+        assert epic_id in ids
+
 
 # ---------------------------------------------------------------------------
 # Tools — claim_spec / release_spec
