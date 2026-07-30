@@ -22,11 +22,13 @@ if TYPE_CHECKING:
 
 from loguru import logger
 
+from diatagma.core.checkbox import checkbox_progress
 from diatagma.core.graph import SpecGraph
 from diatagma.core.models import (
     ArchiveResult,
     CompletionContext,
     ConsistencyIssue,
+    Notice,
     Settings,
     Spec,
     SpecId,
@@ -88,9 +90,11 @@ class LifecycleEngine:
         graph.update_node_status(spec_id, new_status)
         _patch_spec_in_list(all_specs, updated)
 
+        notices = self._status_notices(updated, new_status, graph, all_specs)
+
         if new_status not in _TERMINAL_STATUSES:
             self._regenerate_roadmap()
-            return StatusUpdateResult(spec=updated, completion=None)
+            return StatusUpdateResult(spec=updated, completion=None, notices=notices)
 
         # Build completion context
         auto_completed = self._auto_complete_parents(
@@ -106,7 +110,37 @@ class LifecycleEngine:
             auto_completed_parents=auto_completed,
         )
         self._regenerate_roadmap()
-        return StatusUpdateResult(spec=updated, completion=ctx)
+        return StatusUpdateResult(spec=updated, completion=ctx, notices=notices)
+
+    def _status_notices(
+        self,
+        spec: Spec,
+        new_status: str,
+        graph: SpecGraph,
+        all_specs: list[Spec],
+    ) -> list[Notice]:
+        """Collect non-blocking advisory notices for a status transition.
+
+        Producers append here; the operation always succeeds regardless.
+        """
+        notices: list[Notice] = []
+
+        # DIA-025: completing a spec with unchecked verification boxes
+        if new_status == "done":
+            checked, total = checkbox_progress(spec)
+            if total and checked < total:
+                notices.append(
+                    Notice(
+                        kind="unchecked_boxes",
+                        spec_id=spec.meta.id,
+                        message=(
+                            f"{spec.meta.id}: {total - checked} of {total} "
+                            "checkboxes unchecked"
+                        ),
+                    )
+                )
+
+        return notices
 
     # --- Spec creation with reopening guards -------------------------------
 
@@ -196,6 +230,9 @@ class LifecycleEngine:
 
         # Check 3: Orphaned children
         issues.extend(self._check_orphaned_children(all_specs, specs_by_id))
+
+        # Check 4: Done specs with unchecked verification boxes (active only)
+        issues.extend(self._check_done_unchecked_boxes(all_specs))
 
         return issues
 
@@ -426,6 +463,38 @@ class LifecycleEngine:
                     auto_corrected=False,
                 )
             )
+
+        return issues
+
+    def _check_done_unchecked_boxes(
+        self,
+        all_specs: list[Spec],
+    ) -> list[ConsistencyIssue]:
+        """Detect active done specs whose verification boxes are unchecked.
+
+        Archived specs are exempt — they were closed under prior rules.
+        """
+        issues: list[ConsistencyIssue] = []
+
+        for spec in all_specs:
+            if spec.meta.status != "done":
+                continue
+            if self._store.is_archived(spec.meta.id):
+                continue
+            checked, total = checkbox_progress(spec)
+            if total and checked < total:
+                msg = (
+                    f"{spec.meta.id} is done with {total - checked} of {total} "
+                    "checkboxes unchecked"
+                )
+                issues.append(
+                    ConsistencyIssue(
+                        type="done_with_unchecked_boxes",
+                        spec_id=spec.meta.id,
+                        message=msg,
+                        auto_corrected=False,
+                    )
+                )
 
         return issues
 

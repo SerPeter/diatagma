@@ -1,12 +1,13 @@
 ---
 id: DIA-025
 title: Checkbox progress tracking and completion warnings
-status: pending
+status: done
 type: feature
 tags: [cli, dx, lifecycle]
 business_value: 350
 story_points: 5
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -75,12 +76,12 @@ This story builds the shared **notice channel** that [[DIA-026]] and [[DIA-031]]
 
 ## Verification
 
-- [ ] Unit tests for checkbox extraction (counts, `[X]` uppercase, nested lists, placeholder exclusion)
-- [ ] Notice model + `StatusUpdateResult.notices` populated on done transition
-- [ ] MCP `update_spec`/`claim_spec` route through lifecycle and return notices
-- [ ] CLI `status` prints notices; `show` prints `Boxes:` line
-- [ ] `validate` yields `done_with_unchecked_boxes` for active specs only
-- [ ] Full suite, ruff, ty pass
+- [x] Unit tests for checkbox extraction (counts, `[X]` uppercase, nested lists, placeholder exclusion)
+- [x] Notice model + `StatusUpdateResult.notices` populated on done transition
+- [x] MCP `update_spec`/`claim_spec` route through lifecycle and return notices
+- [x] CLI `status` prints notices; `show` prints `Boxes:` line
+- [x] `validate` yields `done_with_unchecked_boxes` for active specs only
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -91,4 +92,25 @@ This story builds the shared **notice channel** that [[DIA-026]] and [[DIA-031]]
 
 ## Implementation Summary
 
+Added a shared `Notice(kind, spec_id, message, suggested_command)` model and
+`StatusUpdateResult.notices`, populated on every transition via a new
+`LifecycleEngine._status_notices` hook. First producer: a `unchecked_boxes`
+notice when a spec is marked `done` with unchecked verification boxes.
+Checkbox parsing lives in `core/checkbox.py` (`count_checkboxes` /
+`checkbox_progress`), ignoring the `- [ ] ...` template stub. The CLI `status`
+command prints notices, `show` prints a `Boxes: x/y` line, and `validate`
+reports `done_with_unchecked_boxes` for active (non-archived) specs.
+
+Critically, MCP `update_spec`/`claim_spec` now route status changes through
+`LifecycleEngine.update_status` instead of `store.update` directly — so
+auto-completion, completion context, and notices reach MCP agents. This is the
+foundational fix that makes epic propagation ([[DIA-031]]) work over MCP.
+
 ## Implementation Notes
+
+- Notices are advisory and never block: `status done` always succeeds.
+- MCP responses fold notices/completion in via `_attach_lifecycle`.
+- `release_spec` deliberately left on the direct-store path (reset-to-pending
+  needs no lifecycle side effects).
+- Checkbox counting spans the whole body, not just Verification, matching the
+  spec's parse scenario.

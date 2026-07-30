@@ -51,6 +51,28 @@ def _spec_detail(spec: Spec) -> dict:
     return d
 
 
+def _attach_lifecycle(detail: dict, result) -> dict:
+    """Fold lifecycle notices + completion context into an MCP detail dict.
+
+    ``result`` is a StatusUpdateResult or None. Without this, MCP status
+    changes silently drop all lifecycle feedback (auto-completed epics,
+    unchecked-box warnings, blocked-start notices).
+    """
+    if result is None:
+        return detail
+    if result.notices:
+        detail["notices"] = [n.model_dump(exclude_none=True) for n in result.notices]
+    if result.completion:
+        completion = {
+            k: v
+            for k, v in result.completion.model_dump(mode="json").items()
+            if v not in (None, [], False)
+        }
+        if completion:
+            detail["completion"] = completion
+    return detail
+
+
 def _encode_cursor(offset: int) -> str:
     return base64.urlsafe_b64encode(json.dumps({"o": offset}).encode()).decode()
 
@@ -249,11 +271,11 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         """Update spec fields. Only provided fields are changed."""
         ctx = create_context(specs_dir)
 
+        # Status is routed through the lifecycle engine (auto-completion,
+        # notices); all other fields go straight to the store.
         changes: dict = {}
         if title is not None:
             changes["title"] = title
-        if status is not None:
-            changes["status"] = status
         if tags is not None:
             changes["tags"] = _parse_tags(tags) or []
         if business_value is not None:
@@ -267,12 +289,28 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         if description is not None:
             changes["description"] = description
 
-        if not changes:
+        if not changes and status is None:
             raise ValueError("No fields to update.")
 
-        spec = ctx.store.update(spec_id, agent_id=agent_id, **changes)
+        spec: Spec | None = None
+        if changes:
+            spec = ctx.store.update(spec_id, agent_id=agent_id, **changes)
+
+        result = None
+        if status is not None:
+            all_specs = ctx.refresh_graph()
+            result = ctx.lifecycle.update_status(
+                spec_id,
+                status,
+                agent_id=agent_id,
+                graph=ctx.graph,
+                all_specs=all_specs,
+            )
+            spec = result.spec
+
+        assert spec is not None  # guaranteed: raised above if nothing to change
         cache.put(spec)
-        return _spec_detail(spec)
+        return _attach_lifecycle(_spec_detail(spec), result)
 
     @mcp.tool(
         description="Claim a spec for work. Sets assignee and status to in-progress. "
@@ -289,14 +327,19 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         if spec.meta.assignee and spec.meta.assignee != agent_id:
             raise ValueError(f"{spec_id} is already claimed by {spec.meta.assignee!r}.")
 
-        updated = ctx.store.update(
+        # Set the assignee, then route the status change through the
+        # lifecycle engine so blocked-start / epic-start notices fire.
+        ctx.store.update(spec_id, agent_id=agent_id, assignee=agent_id)
+        all_specs = ctx.refresh_graph()
+        result = ctx.lifecycle.update_status(
             spec_id,
+            "in-progress",
             agent_id=agent_id,
-            assignee=agent_id,
-            status="in-progress",
+            graph=ctx.graph,
+            all_specs=all_specs,
         )
-        cache.put(updated)
-        return _spec_detail(updated)
+        cache.put(result.spec)
+        return _attach_lifecycle(_spec_detail(result.spec), result)
 
     @mcp.tool(
         description="Release a claimed spec. Clears assignee and sets status back to pending.",

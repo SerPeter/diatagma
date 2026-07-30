@@ -328,11 +328,29 @@ class ConsistencyIssue(BaseModel):
     auto_corrected: bool = False
 
 
+class Notice(BaseModel):
+    """A non-fatal advisory surfaced after a lifecycle operation.
+
+    The shared channel for feedback that should reach the user/agent
+    without blocking the operation: unchecked checkboxes on completion,
+    starting a blocked spec, epic close/start nudges. Producers live in
+    ``lifecycle.py``; CLI and MCP both render these.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: str
+    spec_id: str
+    message: str
+    suggested_command: str | None = None
+
+
 class StatusUpdateResult(BaseModel):
     """Result of a lifecycle-aware status update."""
 
     spec: Spec
     completion: CompletionContext | None = None
+    notices: list[Notice] = Field(default_factory=list)
 
 
 class DuplicateGroup(BaseModel):

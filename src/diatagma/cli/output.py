@@ -14,7 +14,8 @@ from typing import Any
 import typer
 from pydantic import BaseModel
 
-from diatagma.core.models import Spec
+from diatagma.core.checkbox import checkbox_progress
+from diatagma.core.models import Notice, Spec
 
 
 def print_json(data: Any) -> None:
@@ -67,6 +68,10 @@ def print_spec_detail(spec: Spec) -> None:
     if spec.meta.updated:
         _echo_safe(f"  Updated:  {spec.meta.updated}")
 
+    checked, total = checkbox_progress(spec)
+    if total:
+        _echo_safe(f"  Boxes:    {checked}/{total}")
+
     # Links
     links = spec.meta.links
     if links.blocked_by:
@@ -95,6 +100,18 @@ def print_success(msg: str) -> None:
 def print_warning(msg: str) -> None:
     """Print a warning to stderr."""
     _echo_safe_err(f"Warning: {msg}")
+
+
+def print_notices(notices: list[Notice]) -> None:
+    """Print lifecycle notices (advisory, non-fatal) to stdout."""
+    from diatagma.cli.state import GlobalState
+
+    if GlobalState.quiet:
+        return
+    for notice in notices:
+        _echo_safe(f"  ! {notice.message}")
+        if notice.suggested_command:
+            _echo_safe(f"      → {notice.suggested_command}")
 
 
 def print_error(msg: str) -> NoReturn:

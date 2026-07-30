@@ -14,6 +14,18 @@ from tests.conftest import seed_spec_file
 runner = CliRunner()
 
 
+def _write_spec_with_boxes(
+    specs_dir, spec_id: str, status: str = "in-progress"
+) -> None:
+    """Write a spec file with one checked and one unchecked verification box."""
+    text = (
+        f"---\nid: {spec_id}\ntitle: Boxed\nstatus: {status}\n"
+        "type: feature\ncreated: 2026-03-27\n---\n\n"
+        "## Verification\n\n- [x] done one\n- [ ] todo two\n"
+    )
+    (specs_dir / f"{spec_id}-boxed.story.md").write_text(text, encoding="utf-8")
+
+
 @pytest.fixture(autouse=True)
 def _reset_state():
     """Reset global CLI state between tests."""
@@ -175,6 +187,15 @@ class TestShow:
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
 
+    def test_show_boxes(self, populated_specs):
+        _write_spec_with_boxes(populated_specs, "DIA-050")
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "show", "DIA-050"]
+        )
+        assert result.exit_code == 0
+        assert "Boxes:" in result.output
+        assert "1/2" in result.output
+
 
 # ---------------------------------------------------------------------------
 # Create
@@ -225,6 +246,15 @@ class TestStatus:
         )
         assert result.exit_code == 0
         assert "in-progress" in result.output
+
+    def test_status_done_unchecked_notice(self, populated_specs):
+        _write_spec_with_boxes(populated_specs, "DIA-051")
+        result = runner.invoke(
+            app,
+            ["--specs-dir", str(populated_specs), "status", "DIA-051", "done"],
+        )
+        assert result.exit_code == 0
+        assert "unchecked" in result.output.lower()
 
 
 # ---------------------------------------------------------------------------

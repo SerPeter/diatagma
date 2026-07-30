@@ -16,8 +16,33 @@ from diatagma.core.models import (
     SpecLinks,
     SpecMeta,
 )
+from diatagma.core.parser import write_spec_file
 from diatagma.core.store import SpecStore
 from tests.conftest import seed_spec_file
+
+
+def _seed_with_boxes(
+    tmp_specs_dir: Path,
+    spec_id: str,
+    boxes: list[tuple[bool, str]],
+    status: str = "in-progress",
+) -> None:
+    """Write a spec file whose Verification section holds given checkboxes."""
+    lines = [f"- [{'x' if checked else ' '}] {label}" for checked, label in boxes]
+    body = "## Verification\n\n" + "\n".join(lines) + "\n"
+    path = tmp_specs_dir / f"{spec_id}-boxes.story.md"
+    spec = Spec(
+        meta=SpecMeta(
+            id=spec_id,
+            title="Boxed spec",
+            type="feature",
+            status=status,
+            created=date(2026, 3, 27),
+        ),
+        raw_body=body,
+        file_path=path,
+    )
+    write_spec_file(spec, path)
 
 
 # ---------------------------------------------------------------------------
@@ -716,3 +741,75 @@ class TestRoadmapAutoUpdate:
             "DIA-001", "in-progress", graph=graph, all_specs=all_specs
         )
         assert result.spec.meta.status == "in-progress"
+
+
+# ===========================================================================
+# TestStatusNotices (DIA-025)
+# ===========================================================================
+
+
+class TestStatusNotices:
+    """update_status() emits non-blocking checkbox notices."""
+
+    def test_done_with_unchecked_boxes_emits_notice(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        _seed_with_boxes(
+            tmp_specs_dir, "DIA-001", [(True, "a"), (False, "b"), (False, "c")]
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "done", graph=graph, all_specs=all_specs
+        )
+        notices = [n for n in result.notices if n.kind == "unchecked_boxes"]
+        assert len(notices) == 1
+        assert "2 of 3" in notices[0].message
+
+    def test_all_checked_no_notice(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        _seed_with_boxes(tmp_specs_dir, "DIA-001", [(True, "a"), (True, "b")])
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "done", graph=graph, all_specs=all_specs
+        )
+        assert not [n for n in result.notices if n.kind == "unchecked_boxes"]
+
+    def test_non_done_transition_no_box_notice(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        _seed_with_boxes(tmp_specs_dir, "DIA-001", [(False, "a")], status="pending")
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "in-progress", graph=graph, all_specs=all_specs
+        )
+        assert not [n for n in result.notices if n.kind == "unchecked_boxes"]
+
+    def test_placeholder_only_no_notice(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        _seed_with_boxes(tmp_specs_dir, "DIA-001", [(False, "...")])
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "done", graph=graph, all_specs=all_specs
+        )
+        assert not [n for n in result.notices if n.kind == "unchecked_boxes"]
+
+    def test_validate_flags_done_unchecked(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        _seed_with_boxes(
+            tmp_specs_dir, "DIA-001", [(False, "a"), (True, "b")], status="done"
+        )
+        all_specs = store.list()
+
+        issues = engine.validate_consistency(all_specs=all_specs)
+        assert any(i.type == "done_with_unchecked_boxes" for i in issues)

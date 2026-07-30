@@ -177,6 +177,35 @@ class TestUpdateSpec:
         )
         assert result.is_error
 
+    async def test_status_change_routes_through_lifecycle(self, mcp_client):
+        # DIA-025/031: marking the last child done over MCP must auto-complete
+        # the parent epic (previously bypassed because update_spec called the
+        # store directly).
+        epic = await mcp_client.call_tool(
+            "create_spec", {"title": "Epic", "prefix": "TST", "type": "epic"}
+        )
+        epic_id = json.loads(epic.content[0].text)["meta"]["id"]
+        child = await mcp_client.call_tool(
+            "create_spec", {"title": "Child", "prefix": "TST", "parent": epic_id}
+        )
+        child_id = json.loads(child.content[0].text)["meta"]["id"]
+
+        result = await mcp_client.call_tool(
+            "update_spec", {"spec_id": child_id, "status": "done"}
+        )
+        data = json.loads(result.content[0].text)
+        assert epic_id in data.get("completion", {}).get("auto_completed_parents", [])
+
+        epic_after = await mcp_client.call_tool("get_spec", {"spec_id": epic_id})
+        assert json.loads(epic_after.content[0].text)["meta"]["status"] == "done"
+
+    async def test_status_only_update_succeeds(self, mcp_client):
+        result = await mcp_client.call_tool(
+            "update_spec", {"spec_id": "TST-001", "status": "in-progress"}
+        )
+        data = json.loads(result.content[0].text)
+        assert data["meta"]["status"] == "in-progress"
+
 
 # ---------------------------------------------------------------------------
 # Tools — claim_spec / release_spec

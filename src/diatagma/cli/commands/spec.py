@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from diatagma.cli.output import (
     print_error,
     print_json,
+    print_notices,
     print_spec_detail,
     print_spec_row,
     print_success,
@@ -195,6 +196,8 @@ def status(
                 print_success(
                     f"  Auto-completed: {', '.join(c.auto_completed_parents)}"
                 )
+        if result.notices:
+            print_notices(result.notices)
 
 
 @app.command()
