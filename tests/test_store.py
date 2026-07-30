@@ -16,6 +16,25 @@ from diatagma.core.store import (
 )
 from tests.conftest import seed_spec_file
 
+FRONTMATTER_TEMPLATE = """\
+---
+id: ""
+title: ""
+status: pending
+type: feature
+tags: [refine]
+business_value: 0
+story_points: 1
+parent: ""
+assignee: ""
+created: ""
+---
+
+## Description
+
+<!-- One-line summary -->
+"""
+
 
 # ===========================================================================
 # Slugify
@@ -116,6 +135,54 @@ class TestCreate:
         spec = spec_store.create("DIA", "With template")
         assert spec.raw_body is not None
         assert "## Description" in spec.raw_body
+
+    def test_template_frontmatter_stripped_from_body(
+        self, tmp_specs_dir: Path, sample_prefixes
+    ):
+        store = SpecStore(
+            specs_dir=tmp_specs_dir,
+            prefixes=sample_prefixes,
+            templates={"story": FRONTMATTER_TEMPLATE},
+        )
+        spec = store.create("DIA", "Templated")
+        assert spec.raw_body is not None
+        assert spec.raw_body.startswith("## Description")
+        # Re-parse from disk: single frontmatter block, no stub leftovers
+        assert spec.file_path is not None
+        reparsed = parse_spec_file(spec.file_path)
+        assert reparsed.meta.id == "DIA-001"
+        assert reparsed.raw_body is not None
+        assert 'id: ""' not in reparsed.raw_body
+
+    def test_template_frontmatter_provides_defaults(
+        self, tmp_specs_dir: Path, sample_prefixes
+    ):
+        store = SpecStore(
+            specs_dir=tmp_specs_dir,
+            prefixes=sample_prefixes,
+            templates={"story": FRONTMATTER_TEMPLATE},
+        )
+        spec = store.create("DIA", "Templated")
+        assert spec.meta.tags == ["refine"]
+        assert spec.meta.business_value == 0
+        assert spec.meta.story_points == 1
+        # Empty stubs must not clobber generated fields
+        assert spec.meta.id == "DIA-001"
+        assert spec.meta.title == "Templated"
+        assert spec.meta.created == date.today()
+        assert spec.meta.parent is None
+
+    def test_caller_meta_overrides_template_defaults(
+        self, tmp_specs_dir: Path, sample_prefixes
+    ):
+        store = SpecStore(
+            specs_dir=tmp_specs_dir,
+            prefixes=sample_prefixes,
+            templates={"story": FRONTMATTER_TEMPLATE},
+        )
+        spec = store.create("DIA", "Templated", tags=["urgent"], story_points=5)
+        assert spec.meta.tags == ["urgent"]
+        assert spec.meta.story_points == 5
 
     def test_slug_in_filename(self, spec_store: SpecStore):
         spec = spec_store.create("DIA", "Implement CRUD operations")

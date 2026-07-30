@@ -33,6 +33,7 @@ from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Protocol, runtime_checkable
 
+import frontmatter
 from loguru import logger
 from pydantic import ValidationError
 
@@ -128,6 +129,25 @@ def _slugify(title: str, max_length: int = 50) -> str:
     if len(slug) > max_length:
         slug = slug[:max_length].rsplit("-", 1)[0]
     return slug
+
+
+# ---------------------------------------------------------------------------
+# Template helper
+# ---------------------------------------------------------------------------
+
+
+def _split_template(text: str) -> tuple[dict[str, Any], str]:
+    """Split template content into (metadata defaults, body).
+
+    Template frontmatter provides defaults for fields the caller doesn't
+    set; empty stub values (``""``, ``[]``, ``None``) are dropped.
+    Templates without frontmatter yield an empty defaults dict.
+    """
+    if not text:
+        return {}, ""
+    post = frontmatter.loads(text)
+    defaults = {k: v for k, v in post.metadata.items() if v not in (None, "", [])}
+    return defaults, post.content
 
 
 # ---------------------------------------------------------------------------
@@ -273,14 +293,17 @@ class SpecStore:
 
             # Resolve template
             template_name = template or self._prefixes[prefix].template
-            template_body = self._templates.get(template_name, "")
+            template_defaults, template_body = _split_template(
+                self._templates.get(template_name, "")
+            )
 
             # Build filename and path
             filename = self._build_filename(spec_id, title, spec_type)
             target_path = self._specs_dir / filename
 
-            # Build metadata
+            # Build metadata: template defaults < generated fields < caller args
             meta_dict: dict[str, Any] = {
+                **template_defaults,
                 "id": spec_id,
                 "title": title,
                 "status": "pending",
