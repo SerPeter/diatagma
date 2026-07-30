@@ -37,6 +37,7 @@ def print_spec_row(
     *,
     show_priority: bool = False,
     epic_progress: tuple[int, int] | None = None,
+    blocked_by: list[str] | None = None,
 ) -> None:
     """Print a single spec as a compact one-line summary."""
     parts = [
@@ -47,6 +48,8 @@ def print_spec_row(
     if epic_progress is not None:
         done, total = epic_progress
         parts.append(f"[{done}/{total}]")
+    if blocked_by:
+        parts.append(f"[blocked by {', '.join(blocked_by)}]")
     if show_priority and spec.priority_score > 0:
         parts.append(f"(p={spec.priority_score:.1f})")
     if spec.meta.assignee:
@@ -65,8 +68,17 @@ def print_epic_children(children: list[Spec]) -> None:
         _echo_safe(f"    [{child.meta.status}]  {child.meta.id}: {child.meta.title}")
 
 
-def print_spec_detail(spec: Spec) -> None:
-    """Print spec frontmatter and body in a readable format."""
+def print_spec_detail(
+    spec: Spec,
+    *,
+    blocker_statuses: dict[str, str] | None = None,
+    dependents: list[str] | None = None,
+) -> None:
+    """Print spec frontmatter and body in a readable format.
+
+    When ``blocker_statuses`` is given, declared blockers show their live
+    status; ``dependents`` (specs this one unblocks) prints an Unblocks line.
+    """
     _echo_safe("-" * 60)
     _echo_safe(f"  {spec.meta.id}: {spec.meta.title}")
     _echo_safe("-" * 60)
@@ -97,9 +109,17 @@ def print_spec_detail(spec: Spec) -> None:
     # Links
     links = spec.meta.links
     if links.blocked_by:
-        _echo_safe(f"  Blocked:  {', '.join(links.blocked_by)}")
+        if blocker_statuses is not None:
+            rendered = ", ".join(
+                f"{b} ({blocker_statuses.get(b, '?')})" for b in links.blocked_by
+            )
+        else:
+            rendered = ", ".join(links.blocked_by)
+        _echo_safe(f"  Blocked:  {rendered}")
     if links.relates_to:
         _echo_safe(f"  Related:  {', '.join(links.relates_to)}")
+    if dependents:
+        _echo_safe(f"  Unblocks: {', '.join(dependents)}")
 
     if spec.file_path:
         _echo_safe(f"  File:     {spec.file_path}")

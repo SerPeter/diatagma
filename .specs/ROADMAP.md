@@ -4,8 +4,8 @@
 | Metric | Count |
 |--------|-------|
 | Total specs | 31 |
-| Active (current cycle) | 8 |
-| Archived | 23 |
+| Active (current cycle) | 7 |
+| Archived | 24 |
 | Backlog | 0 |
 <!-- diatagma:meta:end -->
 
@@ -25,7 +25,6 @@
 - [ ] DIA-010: Build web dashboard with Litestar API and React frontend
 - [ ] DIA-013: Epic: Web dashboard — human task interface (epic)
 - [ ] DIA-022: Design web dashboard UX: wireframes and interaction spec for all views
-- [ ] DIA-026: Surface dependency graph in CLI output
 - [ ] DIA-027: Readable dependency graph formats
 - [ ] DIA-028: Status drift detection command
 - [ ] DIA-029: Archive command status guard

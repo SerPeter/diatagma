@@ -911,3 +911,52 @@ class TestEpicPropagation:
 
         issues = engine.validate_consistency(all_specs=all_specs)
         assert any(i.type == "epic_ready_to_close" for i in issues)
+
+
+# ===========================================================================
+# TestBlockedStart (DIA-026)
+# ===========================================================================
+
+
+class TestBlockedStart:
+    """Starting a blocked spec emits a blocked_start notice."""
+
+    def test_blocked_start_notice(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Blocker", status="pending")
+        seed_spec_file(
+            tmp_specs_dir,
+            "DIA-002",
+            "Blocked",
+            status="pending",
+            links=SpecLinks(blocked_by=["DIA-001"]),
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-002", "in-progress", graph=graph, all_specs=all_specs
+        )
+        notices = [n for n in result.notices if n.kind == "blocked_start"]
+        assert len(notices) == 1
+        assert "DIA-001" in notices[0].message
+
+    def test_no_notice_when_blocker_done(
+        self, engine: LifecycleEngine, store: SpecStore, tmp_specs_dir: Path
+    ):
+        seed_spec_file(tmp_specs_dir, "DIA-001", "Blocker", status="done")
+        seed_spec_file(
+            tmp_specs_dir,
+            "DIA-002",
+            "Blocked",
+            status="pending",
+            links=SpecLinks(blocked_by=["DIA-001"]),
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-002", "in-progress", graph=graph, all_specs=all_specs
+        )
+        assert not [n for n in result.notices if n.kind == "blocked_start"]

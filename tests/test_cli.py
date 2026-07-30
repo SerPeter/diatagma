@@ -434,3 +434,40 @@ class TestEpicDisplay:
         assert result.exit_code == 0
         assert "Children" in result.output
         assert "DIA-021" in result.output
+
+
+# ---------------------------------------------------------------------------
+# Graph surfacing (DIA-026)
+# ---------------------------------------------------------------------------
+
+
+class TestGraphSurfacing:
+    def test_list_marks_blocked(self, populated_specs):
+        # DIA-003 is blocked_by DIA-001 (pending) in the fixture
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "list"])
+        assert result.exit_code == 0
+        assert "blocked by DIA-001" in result.output
+
+    def test_show_blocked_with_status(self, populated_specs):
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "show", "DIA-003"]
+        )
+        assert result.exit_code == 0
+        assert "Blocked:" in result.output
+        assert "DIA-001 (pending)" in result.output
+
+    def test_show_unblocks(self, populated_specs):
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "show", "DIA-001"]
+        )
+        assert result.exit_code == 0
+        assert "Unblocks:" in result.output
+        assert "DIA-003" in result.output
+
+    def test_status_blocked_start_notice(self, populated_specs):
+        result = runner.invoke(
+            app,
+            ["--specs-dir", str(populated_specs), "status", "DIA-003", "in-progress"],
+        )
+        assert result.exit_code == 0
+        assert "blocked by" in result.output.lower()

@@ -1,12 +1,13 @@
 ---
 id: DIA-026
 title: Surface dependency graph in CLI output
-status: pending
+status: done
 type: feature
 tags: [cli, dx, graph]
 business_value: 200
 story_points: 3
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -51,9 +52,9 @@ created: 2026-07-30
 
 ## Verification
 
-- [ ] Lifecycle/CLI tests for each scenario
-- [ ] `blocked_start` notice reuses the DIA-025 channel
-- [ ] Full suite, ruff, ty pass
+- [x] Lifecycle/CLI tests for each scenario
+- [x] `blocked_start` notice reuses the DIA-025 channel
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -64,4 +65,18 @@ created: 2026-07-30
 
 ## Implementation Summary
 
+`list` now builds the graph and appends a `[blocked by ...]` marker to any row
+with non-terminal blockers. `show` builds the graph too: `print_spec_detail`
+gained optional `blocker_statuses` (renders `Blocked: DIA-001 (pending)`) and
+`dependents` (an `Unblocks:` line from `graph.get_dependents`). Starting a spec
+with active blockers emits a `blocked_start` notice via the DIA-025 channel.
+Archived/done blockers are filtered out everywhere, so only live blockers show.
+
 ## Implementation Notes
+
+- Graph and status map are built once per command and reused for epic progress,
+  blocked markers, and children — no extra filesystem scans beyond the existing
+  refresh.
+- Blocker status uses the full spec set (`include_archive=True`) so an archived,
+  done blocker correctly reads as non-blocking.
+- Warn-never-block preserved: `status in-progress` on a blocked spec succeeds.

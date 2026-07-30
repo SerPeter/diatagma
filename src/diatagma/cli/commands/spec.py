@@ -80,13 +80,12 @@ def show(
     if GlobalState.json:
         print_json(spec)
     else:
-        print_spec_detail(spec)
+        all_specs = ctx.refresh_graph(include_archive=True)
+        id_to_status = {s.meta.id: s.meta.status for s in all_specs}
+        dependents = ctx.graph.get_dependents(spec_id)
+        print_spec_detail(spec, blocker_statuses=id_to_status, dependents=dependents)
         if spec.meta.type == "epic":
-            children = [
-                s
-                for s in ctx.store.list(include_archive=True)
-                if s.meta.parent == spec_id
-            ]
+            children = [s for s in all_specs if s.meta.parent == spec_id]
             print_epic_children(children)
 
 
@@ -142,17 +141,21 @@ def list_specs(
         if not specs:
             print_success("No specs found.")
             return
-        progress = (
-            _epic_progress_map(ctx.store.list(include_archive=False))
-            if any(s.meta.type == "epic" for s in specs)
-            else {}
-        )
+        all_specs = ctx.refresh_graph(include_archive=True)
+        id_to_status = {s.meta.id: s.meta.status for s in all_specs}
+        progress = _epic_progress_map(all_specs)
         for spec in specs:
+            active_blockers = [
+                b
+                for b in ctx.graph.get_blockers(spec.meta.id)
+                if id_to_status.get(b) not in ("done", "cancelled")
+            ]
             print_spec_row(
                 spec,
                 epic_progress=progress.get(spec.meta.id)
                 if spec.meta.type == "epic"
                 else None,
+                blocked_by=active_blockers or None,
             )
 
 

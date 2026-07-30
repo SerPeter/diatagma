@@ -154,6 +154,26 @@ class LifecycleEngine:
                     )
                 )
 
+        # DIA-026: starting a spec whose blockers are not yet terminal
+        if new_status == "in-progress":
+            id_to_status = {s.meta.id: s.meta.status for s in all_specs}
+            active_blockers = [
+                b
+                for b in graph.get_blockers(spec.meta.id)
+                if id_to_status.get(b) not in _TERMINAL_STATUSES
+            ]
+            if active_blockers:
+                notices.append(
+                    Notice(
+                        kind="blocked_start",
+                        spec_id=spec.meta.id,
+                        message=(
+                            f"{spec.meta.id} started while blocked by "
+                            f"{', '.join(active_blockers)}"
+                        ),
+                    )
+                )
+
         return notices
 
     # --- Spec creation with reopening guards -------------------------------
