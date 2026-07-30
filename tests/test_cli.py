@@ -471,3 +471,31 @@ class TestGraphSurfacing:
         )
         assert result.exit_code == 0
         assert "blocked by" in result.output.lower()
+
+
+# ---------------------------------------------------------------------------
+# Graph formats (DIA-027)
+# ---------------------------------------------------------------------------
+
+
+class TestGraphFormats:
+    def test_mermaid(self, populated_specs):
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "graph", "--format", "mermaid"]
+        )
+        assert result.exit_code == 0
+        assert "flowchart TD" in result.output
+
+    def test_tree(self, populated_specs):
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "graph", "--format", "tree"]
+        )
+        assert result.exit_code == 0
+        # DIA-001 blocks DIA-003 in the fixture
+        assert "DIA-001" in result.output
+
+    def test_json_default_unchanged(self, populated_specs):
+        result = runner.invoke(app, ["--specs-dir", str(populated_specs), "graph"])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "nodes" in data and "edges" in data

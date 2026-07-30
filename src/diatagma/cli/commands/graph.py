@@ -9,24 +9,30 @@ import typer
 from diatagma.cli.app import app
 from diatagma.cli.output import print_json
 from diatagma.cli.state import GlobalState
+from diatagma.core.graph_render import to_mermaid, to_tree
 
 
 @app.command()
 def graph(
     format: Annotated[
         str,
-        typer.Option("--format", "-f", help="Output format: json or dot."),
+        typer.Option(
+            "--format", "-f", help="Output format: json, mermaid, tree, or dot."
+        ),
     ] = "json",
 ) -> None:
     """Export the dependency graph."""
     ctx = GlobalState.get_context()
     ctx.refresh_graph()
-    data = ctx.graph.to_dict()
 
-    if format == "dot":
-        typer.echo(_to_dot(data))
+    if format == "mermaid":
+        typer.echo(to_mermaid(ctx.graph))
+    elif format == "tree":
+        typer.echo(to_tree(ctx.graph))
+    elif format == "dot":
+        typer.echo(_to_dot(ctx.graph.to_dict()))
     else:
-        print_json(data)
+        print_json(ctx.graph.to_dict())
 
 
 def _to_dot(data: dict) -> str:

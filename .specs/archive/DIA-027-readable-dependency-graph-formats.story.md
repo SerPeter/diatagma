@@ -1,12 +1,13 @@
 ---
 id: DIA-027
 title: Readable dependency graph formats
-status: pending
+status: done
 type: feature
 tags: [cli, dx, graph]
 business_value: 150
 story_points: 2
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -50,9 +51,9 @@ created: 2026-07-30
 
 ## Verification
 
-- [ ] Unit tests for mermaid + tree renderers (including cycle case)
-- [ ] CLI test for `--format` option and unchanged JSON default
-- [ ] Full suite, ruff, ty pass
+- [x] Unit tests for mermaid + tree renderers (including cycle case)
+- [x] CLI test for `--format` option and unchanged JSON default
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -62,5 +63,22 @@ created: 2026-07-30
 <!-- ═══ Fill during/after implementation ═══ -->
 
 ## Implementation Summary
+
+New `core/graph_render.py` holds pure functions `to_mermaid` and `to_tree` over
+a built `SpecGraph`. `to_mermaid` emits a `flowchart TD` with `id (status)`
+node labels, blocking edges solid and other typed edges dotted+labelled.
+`to_tree` emits a topologically-first indented tree of the blocking subgraph,
+each blocker parenting the specs it blocks, with `(cycle)`-marked nodes for
+dependency cycles (no crash). `diatagma graph --format` now accepts
+`mermaid`/`tree` alongside the unchanged `json` default and existing `dot`.
+
+## Implementation Notes
+
+- Mermaid node IDs sanitize `-`→`_` (the label keeps the real ID).
+- The graph models blocking/relates/supersedes/discovered edges, not
+  parent/child — so mermaid renders those typed edges dotted rather than a
+  parent hierarchy.
+- A node with multiple blockers appears under each in the tree but its subtree
+  expands once, guarded against infinite recursion on cycles.
 
 ## Implementation Notes
