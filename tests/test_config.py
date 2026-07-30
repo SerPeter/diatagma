@@ -136,6 +136,16 @@ class TestLoadSettings:
         assert settings.active_status_set == frozenset({"doing", "reviewing"})
         assert settings.started_status == "doing"  # first entry
 
+    def test_completed_status_default(self, tmp_path: Path) -> None:
+        assert _load_settings(tmp_path).completed_status == "done"
+
+    def test_completed_status_override(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path / "settings.yaml",
+            "terminal_statuses:\n  - complete\n  - cancelled\n",
+        )
+        assert _load_settings(tmp_path).completed_status == "complete"  # first entry
+
     def test_invalid_settings_raises(self, tmp_path: Path) -> None:
         _write(tmp_path / "settings.yaml", "web_port: not-a-number\n")
         with pytest.raises(ConfigError, match="invalid settings.yaml"):

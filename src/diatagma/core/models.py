@@ -236,6 +236,16 @@ class Settings(BaseModel):
         return frozenset(self.terminal_statuses)
 
     @property
+    def completed_status(self) -> str:
+        """The successful-completion status (first terminal entry, e.g. done).
+
+        Used when auto-completing a parent and when deciding whether a
+        completion should warn about unchecked boxes — the counterpart to
+        ``started_status``. Distinct from a cancellation terminal status.
+        """
+        return self.terminal_statuses[0] if self.terminal_statuses else "done"
+
+    @property
     def active_status_set(self) -> frozenset[str]:
         """Statuses that count as in-flight, as a set for membership tests."""
         return frozenset(self.active_statuses)

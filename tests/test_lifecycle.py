@@ -1067,3 +1067,69 @@ class TestActiveStatusConfig:
 
         engine.update_status("DIA-001", "blocked", graph=graph, all_specs=all_specs)
         assert store.get("DIA-011").meta.status == "pending"
+
+
+# ===========================================================================
+# TestCompletedStatusConfig (review regressions: config-driven completion)
+# ===========================================================================
+
+
+class TestCompletedStatusConfig:
+    """Auto-completion + completion checks honor a renamed terminal status."""
+
+    def _engine(self, store: SpecStore) -> LifecycleEngine:
+        return LifecycleEngine(
+            store=store,
+            settings=Settings(
+                statuses=["pending", "in-progress", "complete", "cancelled"],
+                terminal_statuses=["complete", "cancelled"],
+                active_statuses=["in-progress"],
+            ),
+        )
+
+    def test_auto_complete_uses_completed_status(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        engine = self._engine(store)
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="in-progress", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        engine.update_status("DIA-001", "complete", graph=graph, all_specs=all_specs)
+        # parent promoted to the configured completed status, NOT literal "done"
+        assert store.get("DIA-011").meta.status == "complete"
+
+    def test_completed_epic_is_terminal_no_nag(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        engine = self._engine(store)
+        seed_spec_file(tmp_specs_dir, "DIA-011", "Epic", spec_type="epic")
+        seed_spec_file(
+            tmp_specs_dir, "DIA-001", "Child", status="in-progress", parent="DIA-011"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+        engine.update_status("DIA-001", "complete", graph=graph, all_specs=all_specs)
+
+        issues = engine.validate_consistency(all_specs=store.list())
+        assert not any(
+            i.type == "epic_ready_to_close" and i.spec_id == "DIA-011" for i in issues
+        )
+
+    def test_unchecked_boxes_fires_on_completed_status(
+        self, store: SpecStore, tmp_specs_dir: Path
+    ):
+        engine = self._engine(store)
+        _seed_with_boxes(
+            tmp_specs_dir, "DIA-001", [(False, "a"), (False, "b")], status="in-progress"
+        )
+        all_specs = store.list()
+        graph = _build_graph(all_specs)
+
+        result = engine.update_status(
+            "DIA-001", "complete", graph=graph, all_specs=all_specs
+        )
+        assert any(n.kind == "unchecked_boxes" for n in result.notices)

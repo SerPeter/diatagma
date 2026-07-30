@@ -141,7 +141,7 @@ class LifecycleEngine:
         notices: list[Notice] = []
 
         # DIA-025: completing a spec with unchecked verification boxes
-        if new_status == "done":
+        if new_status == self._settings.completed_status:
             checked, total = checkbox_progress(spec)
             if total and checked < total:
                 notices.append(
@@ -332,10 +332,11 @@ class LifecycleEngine:
         if not all_terminal:
             return []
 
-        # Auto-complete the parent
-        self._store.update(parent_id, agent_id=agent_id, status="done")
-        graph.update_node_status(parent_id, "done")
-        _patch_status_in_list(all_specs, parent_id, "done")
+        # Auto-complete the parent to the configured completed status.
+        completed = self._settings.completed_status
+        self._store.update(parent_id, agent_id=agent_id, status=completed)
+        graph.update_node_status(parent_id, completed)
+        _patch_status_in_list(all_specs, parent_id, completed)
         logger.info("{} auto-completed (all children done)", parent_id)
 
         # Recurse upward
@@ -397,7 +398,7 @@ class LifecycleEngine:
                 Notice(
                     kind="epic_completed",
                     spec_id=epic_id,
-                    message=f"{epic_id} auto-completed — all children are done",
+                    message=f"{epic_id} auto-completed - all children are done",
                     suggested_command=f"diatagma archive {epic_id}",
                 )
             )
@@ -666,7 +667,7 @@ class LifecycleEngine:
         issues: list[ConsistencyIssue] = []
 
         for spec in all_specs:
-            if spec.meta.status != "done":
+            if spec.meta.status != self._settings.completed_status:
                 continue
             if self._store.is_archived(spec.meta.id):
                 continue
