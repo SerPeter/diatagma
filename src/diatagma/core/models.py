@@ -206,6 +206,7 @@ class Settings(BaseModel):
     auto_complete_parent: bool = True
     auto_start_parent: bool = True
     auto_update_roadmap: bool = True
+    drift_stale_days: int = 14
     web_port: int = 8742
     mcp_transport: str = "stdio"
 

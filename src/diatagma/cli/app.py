@@ -54,6 +54,7 @@ def main(
 
 # Register commands (imported after app is defined to avoid circular imports)
 from diatagma.cli.commands import archive  # noqa: E402, F401
+from diatagma.cli.commands import drift  # noqa: E402, F401
 from diatagma.cli.commands import graph  # noqa: E402, F401
 from diatagma.cli.commands import init  # noqa: E402, F401
 from diatagma.cli.commands import server  # noqa: E402, F401

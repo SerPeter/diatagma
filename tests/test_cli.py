@@ -479,6 +479,20 @@ class TestArchive:
 
 
 # ---------------------------------------------------------------------------
+# Drift (DIA-028)
+# ---------------------------------------------------------------------------
+
+
+class TestDrift:
+    def test_drift_json_is_a_list(self, populated_specs):
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "--json", "drift"]
+        )
+        assert result.exit_code == 0
+        assert isinstance(json.loads(result.output), list)
+
+
+# ---------------------------------------------------------------------------
 # Server stubs
 # ---------------------------------------------------------------------------
 

@@ -1,12 +1,13 @@
 ---
 id: DIA-028
 title: Status drift detection command
-status: pending
+status: done
 type: feature
 tags: [cli, dx, lifecycle]
 business_value: 250
 story_points: 3
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -52,11 +53,11 @@ Agents forget to run `diatagma status ... done` after committing (the AGENTS.md 
 
 ## Verification
 
-- [ ] Unit tests over a synthetic git log fixture for both drift kinds
-- [ ] Clean-repo case yields empty result, exit 0
-- [ ] `--json` shape covered
-- [ ] Graceful degradation when git absent
-- [ ] Full suite, ruff, ty pass
+- [x] Unit tests over a synthetic git log fixture for both drift kinds
+- [x] Clean-repo case yields empty result, exit 0
+- [x] `--json` shape covered
+- [x] Graceful degradation when git absent
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -67,4 +68,21 @@ Agents forget to run `diatagma status ... done` after committing (the AGENTS.md 
 
 ## Implementation Summary
 
+New read-only `diatagma drift` command backed by `core/drift.py`. It scans
+`git log` once, mapping spec IDs mentioned in commit messages, and reports
+`implemented_not_marked` for any non-terminal spec referenced by a commit, plus
+`stale_in_progress` for in-progress specs whose file hasn't been committed
+within `drift_stale_days` (new setting, default 14). Git runs via subprocess
+with graceful degradation: `git_available` gates a warning and all git calls
+return empty rather than raising. `--json` emits a list of drift records.
+Running it against this repo immediately surfaced two real drifts (DIA-010,
+DIA-022 referenced in commits while still pending).
+
 ## Implementation Notes
+
+- The mention signal keys on the `PREFIX-NNN` pattern in commit subjects/bodies;
+  since spec IDs are never reused, this is precise without a since-date filter.
+- Staleness uses the file's last committer date (`git log -1 --format=%cs`);
+  a spec file with no git history is treated as not-stale (undeterminable).
+- `today` and `stale_days` are injected into `detect_drift` so tests are
+  deterministic (no wall-clock dependence).
