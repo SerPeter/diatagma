@@ -12,11 +12,11 @@ from diatagma.cli.state import GlobalState
 from diatagma.core.config import DiatagmaConfig
 from diatagma.core.models import Cycle
 from diatagma.core.roadmap import (
+    _current_cycle,
+    _next_cycle,
     generate_roadmap,
     generate_roadmap_json,
     update_roadmap_file,
-    _current_cycle,
-    _next_cycle,
 )
 from tests.conftest import seed_spec_file
 

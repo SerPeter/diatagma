@@ -23,8 +23,8 @@ Key models:
 from __future__ import annotations
 
 from datetime import date
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -427,8 +427,9 @@ __all__ = [
     "ChangelogEntry",
     "CompletionContext",
     "ConsistencyIssue",
-    "DuplicateGroup",
+    "Cycle",
     "DueDateUrgency",
+    "DuplicateGroup",
     "HookCondition",
     "HookEntry",
     "HooksConfig",
@@ -445,6 +446,5 @@ __all__ = [
     "SpecId",
     "SpecLinks",
     "SpecMeta",
-    "Cycle",
     "StatusUpdateResult",
 ]

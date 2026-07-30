@@ -17,7 +17,6 @@ from fastmcp import FastMCP
 from diatagma.core.context import create_context
 from diatagma.core.parser import render_spec
 
-
 # ---------------------------------------------------------------------------
 # Resource registration
 # ---------------------------------------------------------------------------

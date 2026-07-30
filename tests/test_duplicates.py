@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 import pytest
 from typer.testing import CliRunner
 
@@ -184,7 +183,7 @@ class TestAutoFixDuplicates:
         os.utime(beta_path, (2000000, 2000000))
 
         duplicates = detect_duplicate_ids(spec_store)
-        issues, warnings = auto_fix_duplicates(spec_store, duplicates)
+        issues, _ = auto_fix_duplicates(spec_store, duplicates)
 
         assert len(issues) == 1
         assert issues[0].auto_corrected is True

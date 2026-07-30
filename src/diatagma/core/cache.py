@@ -157,7 +157,7 @@ class SpecCache:
         values = list(row.values())
 
         self._conn.execute(
-            f"INSERT OR REPLACE INTO tasks ({columns}) VALUES ({placeholders})",  # noqa: S608
+            f"INSERT OR REPLACE INTO tasks ({columns}) VALUES ({placeholders})",
             values,
         )
 
@@ -185,7 +185,7 @@ class SpecCache:
             columns = ", ".join(row.keys())
             placeholders = ", ".join("?" for _ in row)
             self._conn.execute(
-                f"INSERT INTO tasks ({columns}) VALUES ({placeholders})",  # noqa: S608
+                f"INSERT INTO tasks ({columns}) VALUES ({placeholders})",
                 list(row.values()),
             )
             self._conn.execute(
@@ -206,7 +206,7 @@ class SpecCache:
         where_clause, params = self._build_where(filters)
         order_clause = self._build_order_by(sort_by, reverse)
 
-        sql = f"SELECT * FROM tasks {where_clause} {order_clause}"  # noqa: S608
+        sql = f"SELECT * FROM tasks {where_clause} {order_clause}"
         rows = self._conn.execute(sql, params).fetchall()
 
         results: list[Spec] = []

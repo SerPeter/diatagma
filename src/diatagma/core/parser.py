@@ -24,7 +24,6 @@ from yaml import SafeDumper
 
 from diatagma.core.models import Spec, SpecBody, SpecMeta
 
-
 # ---------------------------------------------------------------------------
 # Custom YAML handler — preserves flow-style lists and key order
 # ---------------------------------------------------------------------------

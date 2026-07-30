@@ -14,7 +14,7 @@ User prose outside these fences is preserved on regeneration.
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 from diatagma.core.models import Cycle, Spec
@@ -61,7 +61,7 @@ def _current_cycle(cycles: list[Cycle], today: date | None = None) -> Cycle | No
 
     Falls back to the most recent past cycle if today is between cycles.
     """
-    today = today or date.today()
+    today = today or datetime.now().astimezone().date()
     # Exact match first
     for c in cycles:
         if c.start <= today <= c.end:

@@ -15,7 +15,6 @@ from fastmcp import FastMCP
 
 from diatagma.core.context import create_context
 
-
 # ---------------------------------------------------------------------------
 # Prompt registration
 # ---------------------------------------------------------------------------

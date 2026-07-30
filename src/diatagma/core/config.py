@@ -24,14 +24,13 @@ from loguru import logger
 from pydantic import ValidationError
 
 from diatagma.core.models import (
+    Cycle,
     HooksConfig,
     PrefixDef,
     PriorityConfig,
     SchemaConfig,
     Settings,
-    Cycle,
 )
-
 
 # ---------------------------------------------------------------------------
 # Exceptions

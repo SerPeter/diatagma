@@ -16,7 +16,6 @@ from diatagma.core.parser import (
 from diatagma.core.store import SpecStore
 from tests.conftest import seed_spec_file
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

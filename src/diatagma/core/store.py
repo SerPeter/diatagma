@@ -28,9 +28,9 @@ import re
 import shutil
 import threading
 from collections import defaultdict
-from datetime import date
-from pathlib import Path
 from collections.abc import Callable
+from datetime import date, datetime
+from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 import frontmatter
@@ -326,7 +326,7 @@ class SpecStore:
                 "title": title,
                 "status": "pending",
                 "type": spec_type,
-                "created": date.today(),
+                "created": datetime.now().astimezone().date(),
                 **meta,
             }
             spec_meta = SpecMeta.model_validate(meta_dict)
@@ -363,9 +363,7 @@ class SpecStore:
             for key, value in changes.items():
                 if key in meta_fields:
                     meta_changes[key] = value
-                elif key in body_fields:
-                    body_changes[key] = value
-                elif key == "extra_sections":
+                elif key in body_fields or key == "extra_sections":
                     body_changes[key] = value
                 else:
                     logger.warning("ignoring unknown field in update: {}", key)
@@ -375,7 +373,7 @@ class SpecStore:
                 current_meta = spec.meta.model_dump()
                 old_values = {k: current_meta.get(k) for k in meta_changes}
                 current_meta.update(meta_changes)
-                current_meta["updated"] = date.today()
+                current_meta["updated"] = datetime.now().astimezone().date()
                 spec.meta = SpecMeta.model_validate(current_meta)
 
                 # Log each changed field
@@ -413,7 +411,7 @@ class SpecStore:
                 # Also set updated date if not already set by meta changes
                 if not meta_changes:
                     current_meta = spec.meta.model_dump()
-                    current_meta["updated"] = date.today()
+                    current_meta["updated"] = datetime.now().astimezone().date()
                     spec.meta = SpecMeta.model_validate(current_meta)
 
             if spec.file_path is None:
@@ -549,31 +547,22 @@ class SpecStore:
             if spec.meta.type not in allowed:
                 return False
 
-        if f.tags is not None:
-            if not set(f.tags) & set(spec.meta.tags):
-                return False
+        if f.tags is not None and not set(f.tags) & set(spec.meta.tags):
+            return False
 
-        if f.prefix is not None:
-            if not spec.meta.id.startswith(f.prefix + "-"):
-                return False
+        if f.prefix is not None and not spec.meta.id.startswith(f.prefix + "-"):
+            return False
 
-        if f.parent is not None:
-            if spec.meta.parent != f.parent:
-                return False
+        if f.parent is not None and spec.meta.parent != f.parent:
+            return False
 
-        if f.assignee is not None:
-            if spec.meta.assignee != f.assignee:
-                return False
+        if f.assignee is not None and spec.meta.assignee != f.assignee:
+            return False
 
-        if f.cycle is not None:
-            if spec.meta.cycle != f.cycle:
-                return False
+        if f.cycle is not None and spec.meta.cycle != f.cycle:
+            return False
 
-        if f.search is not None:
-            if f.search.lower() not in spec.meta.title.lower():
-                return False
-
-        return True
+        return f.search is None or f.search.lower() in spec.meta.title.lower()
 
     def _log_mutation(self, spec_id: str, action: str, **kwargs: Any) -> None:
         """Invoke the changelog callback if configured."""

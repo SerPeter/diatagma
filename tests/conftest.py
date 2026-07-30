@@ -15,9 +15,9 @@ from datetime import date
 
 import pytest
 
+from diatagma.core.cache import SpecCache
 from diatagma.core.models import PrefixDef, PriorityConfig, Spec, SpecBody, SpecMeta
 from diatagma.core.parser import write_spec_file
-from diatagma.core.cache import SpecCache
 from diatagma.core.store import SpecStore
 
 

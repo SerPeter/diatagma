@@ -13,7 +13,6 @@ from diatagma.core.models import SortField, Spec, SpecFilter, SpecMeta
 from diatagma.core.parser import parse_spec_file
 from tests.conftest import seed_spec_file
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -11,12 +11,12 @@ from __future__ import annotations
 import re
 import subprocess
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from diatagma.core.models import ConsistencyIssue, DuplicateGroup
-from diatagma.core.parser import parse_spec_file, write_spec_file
+from diatagma.core.parser import ParseError, parse_spec_file, write_spec_file
 
 if TYPE_CHECKING:
     from diatagma.core.store import SpecStore
@@ -100,7 +100,7 @@ def renumber_spec(
             continue
         try:
             other = parse_spec_file(path)
-        except Exception:
+        except (ParseError, OSError):
             continue
 
         if ambiguous and _spec_references_id(other, old_id):
@@ -171,6 +171,7 @@ def _file_age(path: Path) -> datetime:
             text=True,
             timeout=5,
             cwd=str(path.parent),
+            check=False,
         )
         if result.returncode == 0 and result.stdout.strip():
             # Take the last line (earliest commit that added the file)
@@ -178,7 +179,7 @@ def _file_age(path: Path) -> datetime:
             return datetime.fromisoformat(ts)
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
-    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
 
 
 def _count_files_with_id(store: SpecStore, spec_id: str, exclude: Path) -> int:
@@ -191,7 +192,7 @@ def _count_files_with_id(store: SpecStore, spec_id: str, exclude: Path) -> int:
     return count
 
 
-def _spec_references_id(spec: "SpecStore | object", old_id: str) -> bool:
+def _spec_references_id(spec: SpecStore | object, old_id: str) -> bool:
     """Check if a spec references the given ID in any link/parent field."""
     from diatagma.core.models import Spec
 

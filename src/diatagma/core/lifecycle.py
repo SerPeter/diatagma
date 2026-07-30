@@ -28,15 +28,15 @@ from diatagma.core.models import (
     ArchiveResult,
     CompletionContext,
     ConsistencyIssue,
+    Cycle,
     Notice,
     Settings,
     Spec,
     SpecId,
-    Cycle,
     StatusUpdateResult,
 )
 from diatagma.core.next import get_next
-from diatagma.core.store import SpecStore
+from diatagma.core.store import SpecNotFoundError, SpecStore
 
 
 class LifecycleError(Exception):
@@ -296,7 +296,7 @@ class LifecycleEngine:
                 content = generate_roadmap(self._store, self._config)
             roadmap_path.write_text(content, encoding="utf-8")
             logger.debug("ROADMAP.md regenerated after status change")
-        except Exception:
+        except Exception:  # noqa: BLE001 - roadmap regen is best-effort; never blocks a status change
             logger.opt(exception=True).warning("Failed to regenerate ROADMAP.md")
 
     # --- Internal helpers --------------------------------------------------
@@ -432,7 +432,7 @@ class LifecycleEngine:
         """Check parent epic status; reopen or raise as needed."""
         try:
             parent = self._store.get(parent_id)
-        except Exception:
+        except SpecNotFoundError:
             return  # Parent doesn't exist yet — no guard needed
 
         is_archived = self._store.is_archived(parent_id)

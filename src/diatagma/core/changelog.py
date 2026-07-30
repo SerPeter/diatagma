@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import os
 import re
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from diatagma.core.models import ChangelogEntry
@@ -145,7 +145,7 @@ class Changelog:
     ) -> None:
         """Append a single changelog entry, creating the file if needed."""
         if today is None:
-            today = date.today()
+            today = datetime.now().astimezone().date()
 
         line = _format_line(spec_id, action, field, old, new, agent_id)
         needs_file_init = not self._path.exists() or self._path.stat().st_size == 0

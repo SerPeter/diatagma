@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from diatagma.cli.app import app
 from diatagma.cli.output import print_json, print_success
 from diatagma.cli.state import GlobalState

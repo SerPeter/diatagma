@@ -10,6 +10,7 @@ from diatagma.core.models import (
     DEFAULT_STATUSES,
     DEFAULT_TYPES,
     FIBONACCI_POINTS,
+    Cycle,
     DueDateUrgency,
     HookCondition,
     HookEntry,
@@ -22,7 +23,6 @@ from diatagma.core.models import (
     SpecBody,
     SpecLinks,
     SpecMeta,
-    Cycle,
 )
 
 # ---------------------------------------------------------------------------

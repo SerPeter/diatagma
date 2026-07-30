@@ -9,7 +9,6 @@ from diatagma.core.graph import SpecGraph
 from diatagma.core.models import Spec, SpecBody, SpecLinks, SpecMeta
 from diatagma.core.priority import DependencyLookup
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

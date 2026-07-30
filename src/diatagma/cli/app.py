@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from loguru import logger
@@ -21,7 +21,7 @@ app = typer.Typer(
 @app.callback()
 def main(
     specs_dir: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--specs-dir",
             help="Path to .specs/ directory.",
@@ -53,12 +53,14 @@ def main(
 
 
 # Register commands (imported after app is defined to avoid circular imports)
-from diatagma.cli.commands import archive  # noqa: E402, F401
-from diatagma.cli.commands import drift  # noqa: E402, F401
-from diatagma.cli.commands import graph  # noqa: E402, F401
-from diatagma.cli.commands import init  # noqa: E402, F401
-from diatagma.cli.commands import server  # noqa: E402, F401
-from diatagma.cli.commands import spec  # noqa: E402, F401
-from diatagma.cli.commands import renumber  # noqa: E402, F401
-from diatagma.cli.commands import roadmap  # noqa: E402, F401
-from diatagma.cli.commands import validate  # noqa: E402, F401
+from diatagma.cli.commands import (
+    archive,  # noqa: F401
+    drift,  # noqa: F401
+    graph,  # noqa: F401
+    init,  # noqa: F401
+    renumber,  # noqa: F401
+    roadmap,  # noqa: F401
+    server,  # noqa: F401
+    spec,  # noqa: F401
+    validate,  # noqa: F401
+)

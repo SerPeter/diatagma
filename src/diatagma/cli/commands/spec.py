@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
-
 from pydantic import ValidationError
 
+# Lazy import app to avoid circular imports
+from diatagma.cli.app import app
 from diatagma.cli.output import (
     print_epic_children,
     print_error,
@@ -23,40 +24,37 @@ from diatagma.core.models import SortField, SpecFilter
 from diatagma.core.next import get_next
 from diatagma.core.store import SpecNotFoundError
 
-# Lazy import app to avoid circular imports
-from diatagma.cli.app import app
-
 
 @app.command()
 def create(
     title: Annotated[str, typer.Argument(help="Title for the new spec.")],
     type: Annotated[str, typer.Option("--type", "-t", help="Spec type.")] = "feature",
     prefix: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--prefix", "-p", help="ID prefix (default: first configured)."),
     ] = None,
     business_value: Annotated[
-        Optional[int], typer.Option("--business-value", "-b", help="Business value.")
+        int | None, typer.Option("--business-value", "-b", help="Business value.")
     ] = None,
     story_points: Annotated[
-        Optional[int], typer.Option("--story-points", help="Story points (Fibonacci).")
+        int | None, typer.Option("--story-points", help="Story points (Fibonacci).")
     ] = None,
     tags: Annotated[
-        Optional[str], typer.Option("--tags", help="Comma-separated tags.")
+        str | None, typer.Option("--tags", help="Comma-separated tags.")
     ] = None,
     parent: Annotated[
-        Optional[str], typer.Option("--parent", help="Parent epic ID.")
+        str | None, typer.Option("--parent", help="Parent epic ID.")
     ] = None,
-    cycle: Annotated[Optional[str], typer.Option("--cycle", help="Cycle name.")] = None,
+    cycle: Annotated[str | None, typer.Option("--cycle", help="Cycle name.")] = None,
     assignee: Annotated[
-        Optional[str], typer.Option("--assignee", help="Assignee.")
+        str | None, typer.Option("--assignee", help="Assignee.")
     ] = None,
     description: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--description", "-d", help="Fills the Description section."),
     ] = None,
     verification: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             "--verification",
             help="Acceptance criterion (repeatable); fills Verification.",
@@ -99,7 +97,7 @@ def create(
             all_specs=all_specs,
             **meta,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - CLI boundary: surface any failure as a user error
         print_error(str(e))
 
     if GlobalState.json:
@@ -155,11 +153,11 @@ def _epic_progress_map(
 @app.command(name="list")
 def list_specs(
     status: Annotated[
-        Optional[str], typer.Option("--status", "-s", help="Filter by status.")
+        str | None, typer.Option("--status", "-s", help="Filter by status.")
     ] = None,
-    tag: Annotated[Optional[str], typer.Option("--tag", help="Filter by tag.")] = None,
+    tag: Annotated[str | None, typer.Option("--tag", help="Filter by tag.")] = None,
     type: Annotated[
-        Optional[str], typer.Option("--type", "-t", help="Filter by type.")
+        str | None, typer.Option("--type", "-t", help="Filter by type.")
     ] = None,
     sort: Annotated[
         SortField, typer.Option("--sort", help="Sort field.")
@@ -210,12 +208,12 @@ def list_specs(
 @app.command(name="next")
 def next_specs(
     limit: Annotated[int, typer.Option("--limit", "-n", help="Max specs to show.")] = 5,
-    tag: Annotated[Optional[str], typer.Option("--tag", help="Filter by tag.")] = None,
+    tag: Annotated[str | None, typer.Option("--tag", help="Filter by tag.")] = None,
     type: Annotated[
-        Optional[str], typer.Option("--type", "-t", help="Filter by type.")
+        str | None, typer.Option("--type", "-t", help="Filter by type.")
     ] = None,
     cycle: Annotated[
-        Optional[str], typer.Option("--cycle", help="Filter by cycle.")
+        str | None, typer.Option("--cycle", help="Filter by cycle.")
     ] = None,
 ) -> None:
     """Show next actionable specs sorted by priority."""
@@ -261,7 +259,7 @@ def status(
             graph=ctx.graph,
             all_specs=all_specs,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - CLI boundary: surface any failure as a user error
         print_error(str(e))
 
     if archive:
@@ -312,7 +310,7 @@ def edit(
         spec = ctx.store.update(spec_id, agent_id="cli", **{field: coerced})
     except SpecNotFoundError:
         print_error(f"{spec_id} not found.")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - CLI boundary: surface any failure as a user error
         print_error(str(e))
 
     if GlobalState.json:

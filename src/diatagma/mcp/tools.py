@@ -18,9 +18,8 @@ from fastmcp import FastMCP
 
 from diatagma.core.cache import SpecCache
 from diatagma.core.context import create_context
-from diatagma.core.models import Spec, SpecFilter, SortField
+from diatagma.core.models import SortField, Spec, SpecFilter
 from diatagma.core.next import get_next
-
 
 # ---------------------------------------------------------------------------
 # Serialization helpers
@@ -90,7 +89,7 @@ def _recache_parents(ctx, cache: SpecCache, result) -> None:
     for spec_id in affected:
         try:
             cache.put(ctx.store.get(spec_id))
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - best-effort cache refresh; never fatal
             pass
 
 
@@ -101,7 +100,7 @@ def _encode_cursor(offset: int) -> str:
 def _decode_cursor(cursor: str) -> int:
     try:
         return json.loads(base64.urlsafe_b64decode(cursor))["o"]
-    except Exception:
+    except (ValueError, KeyError, TypeError):
         return 0
 
 
@@ -292,7 +291,7 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         if parent:
             try:
                 cache.put(ctx.store.get(parent))
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - best-effort re-cache of reopened parent; never fatal
                 pass
         return _spec_detail(spec)
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
@@ -501,7 +501,7 @@ def _install_skill(repo_root: Path, *, update: bool = False) -> None:
 
         try:
             config = DiatagmaConfig(specs_dir)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - config load is best-effort; proceed without it
             pass  # Generate without config — still useful
 
     skill_dir.mkdir(parents=True, exist_ok=True)
@@ -553,11 +553,11 @@ def _install_agents_md(repo_root: Path) -> None:
 @app.command()
 def init(
     prefix: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--prefix", "-p", help="Initial prefix to configure."),
     ] = None,
     name: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--name", help="Project name for the prefix."),
     ] = None,
     skill: Annotated[

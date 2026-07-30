@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
 
 import typer
 
@@ -29,7 +29,7 @@ def drift() -> None:
     records = detect_drift(
         specs,
         repo_root,
-        today=date.today(),
+        today=datetime.now().astimezone().date(),
         stale_days=ctx.config.settings.drift_stale_days,
         terminal_statuses=ctx.config.settings.terminal_status_set,
         active_statuses=ctx.config.settings.active_status_set,

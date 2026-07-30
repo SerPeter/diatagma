@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import NoReturn
-from typing import Any
+from typing import Any, NoReturn
 
 import typer
 from pydantic import BaseModel

@@ -19,11 +19,10 @@ Key functions:
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Protocol, runtime_checkable
 
 from diatagma.core.models import DueDateUrgency, PriorityConfig, Spec
-
 
 # ---------------------------------------------------------------------------
 # Graph protocol (decouples from DIA-005)
@@ -98,7 +97,7 @@ def compute_priority(
     if config is None:
         config = PriorityConfig()
     if today is None:
-        today = date.today()
+        today = datetime.now().astimezone().date()
 
     w = config.weights
 
@@ -136,7 +135,7 @@ def rank_specs(
     if config is None:
         config = PriorityConfig()
     if today is None:
-        today = date.today()
+        today = datetime.now().astimezone().date()
 
     for spec in specs:
         spec.priority_score = compute_priority(spec, graph, config, today)

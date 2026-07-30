@@ -3,7 +3,6 @@
 from datetime import date
 from pathlib import Path
 
-
 from diatagma.core.changelog import (
     Changelog,
     _format_line,

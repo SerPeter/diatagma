@@ -1,7 +1,7 @@
 """Tests for core.store — SpecStore CRUD over filesystem."""
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -129,7 +129,7 @@ class TestCreate:
         assert spec.meta.title == "Test spec"
         assert spec.meta.status == "pending"
         assert spec.meta.type == "bug"
-        assert spec.meta.created == date.today()
+        assert spec.meta.created == datetime.now().astimezone().date()
 
     def test_template_body_present(self, spec_store: SpecStore):
         spec = spec_store.create("DIA", "With template")
@@ -179,7 +179,7 @@ class TestCreate:
         # Empty stubs must not clobber generated fields
         assert spec.meta.id == "DIA-001"
         assert spec.meta.title == "Templated"
-        assert spec.meta.created == date.today()
+        assert spec.meta.created == datetime.now().astimezone().date()
         assert spec.meta.parent is None
 
     def test_caller_meta_overrides_template_defaults(
@@ -437,7 +437,7 @@ class TestUpdate:
     def test_update_sets_updated_date(self, spec_store: SpecStore, tmp_specs_dir: Path):
         seed_spec_file(tmp_specs_dir, "DIA-001", "Track date")
         spec = spec_store.update("DIA-001", status="done")
-        assert spec.meta.updated == date.today()
+        assert spec.meta.updated == datetime.now().astimezone().date()
 
     def test_update_preserves_body_on_meta_only(
         self, spec_store: SpecStore, tmp_specs_dir: Path

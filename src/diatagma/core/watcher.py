@@ -20,7 +20,7 @@ import re
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, Self
 
 from loguru import logger
 from watchfiles import Change, DefaultFilter, watch
@@ -116,9 +116,7 @@ class SpecFileFilter(DefaultFilter):
             return False
         if not path.endswith(".md"):
             return False
-        if path.endswith(".tmp"):
-            return False
-        return True
+        return not path.endswith(".tmp")
 
 
 # ---------------------------------------------------------------------------
@@ -194,7 +192,7 @@ class SpecWatcher:
             self._thread = None
         logger.info("spec watcher stopped")
 
-    def __enter__(self) -> SpecWatcher:
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -228,12 +226,12 @@ class SpecWatcher:
                 for callback in self._callbacks:
                     try:
                         callback(events)
-                    except Exception:
+                    except Exception:  # noqa: BLE001 - user callback may raise anything; log and continue
                         logger.exception(
                             "watcher callback {} raised an exception",
                             getattr(callback, "__name__", repr(callback)),
                         )
-        except Exception:
+        except Exception:  # noqa: BLE001 - watcher thread must survive unexpected errors
             if not self._stop_event.is_set():
                 logger.exception("watcher loop crashed unexpectedly")
 

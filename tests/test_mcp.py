@@ -7,8 +7,8 @@ import json
 import pytest
 from fastmcp import Client
 
-from diatagma.mcp.server import create_mcp_server
 from diatagma.mcp import tools as mcp_tools
+from diatagma.mcp.server import create_mcp_server
 from tests.conftest import seed_spec_file
 
 

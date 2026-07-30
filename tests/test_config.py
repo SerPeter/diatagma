@@ -8,24 +8,23 @@ import pytest
 from diatagma.core.config import (
     ConfigError,
     DiatagmaConfig,
+    _load_cycles,
     _load_hooks,
     _load_prefixes,
     _load_priority,
     _load_schema,
     _load_settings,
-    _load_cycles,
     _load_templates,
     _load_yaml,
 )
 from diatagma.core.models import (
+    Cycle,
     HooksConfig,
     PrefixDef,
     PriorityConfig,
     SchemaConfig,
     Settings,
-    Cycle,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
