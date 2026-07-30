@@ -435,6 +435,48 @@ class TestArchive:
         assert result.exit_code == 0
         assert "nothing to archive" in result.output.lower()
 
+    def test_archive_single_terminal(self, populated_specs):
+        runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "status", "DIA-001", "done"]
+        )
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "archive", "DIA-001"]
+        )
+        assert result.exit_code == 0
+        assert "archived dia-001" in result.output.lower()
+        assert list((populated_specs / "archive").glob("DIA-001-*.md"))
+        assert not list(populated_specs.glob("DIA-001-*.md"))
+
+    def test_archive_single_non_terminal_refused(self, populated_specs):
+        result = runner.invoke(
+            app, ["--specs-dir", str(populated_specs), "archive", "DIA-002"]
+        )
+        assert result.exit_code == 1
+        assert "not terminal" in result.output.lower()
+
+    def test_archive_single_force(self, populated_specs):
+        result = runner.invoke(
+            app,
+            ["--specs-dir", str(populated_specs), "archive", "DIA-002", "--force"],
+        )
+        assert result.exit_code == 0
+        assert "archived dia-002" in result.output.lower()
+
+    def test_status_archive_non_terminal_warns(self, populated_specs):
+        result = runner.invoke(
+            app,
+            [
+                "--specs-dir",
+                str(populated_specs),
+                "status",
+                "DIA-001",
+                "in-progress",
+                "--archive",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "not archiving" in result.output.lower()
+
 
 # ---------------------------------------------------------------------------
 # Server stubs

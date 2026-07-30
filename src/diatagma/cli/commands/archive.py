@@ -7,12 +7,19 @@ from typing import Annotated
 import typer
 
 from diatagma.cli.app import app
-from diatagma.cli.output import print_json, print_success, print_warning
+from diatagma.cli.output import print_error, print_json, print_success, print_warning
 from diatagma.cli.state import GlobalState
+from diatagma.core.store import SpecNotFoundError
+
+_TERMINAL_STATUSES = ("done", "cancelled")
 
 
 @app.command()
 def archive(
+    spec_id: Annotated[
+        str | None,
+        typer.Argument(help="Spec ID to archive (omit for bulk --done)."),
+    ] = None,
     done: Annotated[
         bool,
         typer.Option("--done", help="Archive all specs with terminal status."),
@@ -25,10 +32,18 @@ def archive(
         str | None,
         typer.Option("--cycle", help="Only archive specs in this cycle."),
     ] = None,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Archive a single spec even if not terminal."),
+    ] = False,
 ) -> None:
-    """Archive completed specs."""
+    """Archive completed specs (single spec by ID, or bulk with --done)."""
+    if spec_id:
+        _archive_single(spec_id, force)
+        return
+
     if not done:
-        typer.echo("Use --done to archive all terminal specs.")
+        typer.echo("Use --done to archive all terminal specs, or pass a spec ID.")
         raise typer.Exit(code=2)
 
     ctx = GlobalState.get_context()
@@ -52,6 +67,27 @@ def archive(
             print_success("Nothing to archive.")
         for w in result.warnings:
             print_warning(w)
+
+
+def _archive_single(spec_id: str, force: bool) -> None:
+    """Archive one spec, guarding on terminal status unless forced."""
+    ctx = GlobalState.get_context()
+    try:
+        spec = ctx.store.get(spec_id)
+    except SpecNotFoundError:
+        print_error(f"{spec_id} not found.")
+
+    is_terminal = spec.meta.status in _TERMINAL_STATUSES
+    if not is_terminal and not force:
+        print_error(
+            f"{spec_id} is {spec.meta.status}, not terminal. "
+            "Use --force to archive it anyway."
+        )
+
+    ctx.store.move_to_archive(spec_id, agent_id="cli")
+    if not is_terminal:
+        print_warning(f"Force-archived {spec_id} while status is {spec.meta.status}.")
+    print_success(f"Archived {spec_id}.")
 
 
 @app.command(name="archive-cycle")

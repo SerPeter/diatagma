@@ -61,3 +61,4 @@
 - DIA-026: status pending → done (agent: cli)
 - DIA-027: status pending → done (agent: cli)
 - DIA-030: status pending → done (agent: cli)
+- DIA-029: status pending → done (agent: cli)

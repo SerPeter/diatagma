@@ -1,12 +1,13 @@
 ---
 id: DIA-029
 title: Archive command status guard
-status: pending
+status: done
 type: feature
 tags: [cli, dx, lifecycle]
 business_value: 150
 story_points: 2
 created: 2026-07-30
+updated: 2026-07-30
 ---
 
 ## Description
@@ -51,10 +52,10 @@ Today `archive` only operates in bulk (`--done`, `--parent`, `--cycle`) and the 
 
 ## Verification
 
-- [ ] CLI tests: terminal archives, non-terminal refused, `--force` overrides
-- [ ] `status --archive` warning on non-terminal spec
-- [ ] Bulk archive regression untouched
-- [ ] Full suite, ruff, ty pass
+- [x] CLI tests: terminal archives, non-terminal refused, `--force` overrides
+- [x] `status --archive` warning on non-terminal spec
+- [x] Bulk archive regression untouched
+- [x] Full suite, ruff, ty pass
 
 ## References
 
@@ -65,4 +66,16 @@ Today `archive` only operates in bulk (`--done`, `--parent`, `--cycle`) and the 
 
 ## Implementation Summary
 
+`diatagma archive` now accepts an optional positional spec ID for single-spec
+archival. A non-terminal spec is refused with a clear message and non-zero exit
+unless `--force` is passed (which archives with a warning). The existing bulk
+`--done/--parent/--cycle` behavior is unchanged. Separately, `status --archive`
+on a non-terminal status now warns that the archive was skipped instead of
+silently doing nothing.
+
 ## Implementation Notes
+
+- Single-spec archival goes through `store.move_to_archive`, which keeps the
+  existing missing-Implementation-Summary warning.
+- The cascading epic+children archive is deferred to [[DIA-031]]'s follow-up
+  list; this story delivers the single-spec guard only.

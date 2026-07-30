@@ -4,8 +4,8 @@
 | Metric | Count |
 |--------|-------|
 | Total specs | 31 |
-| Active (current cycle) | 5 |
-| Archived | 26 |
+| Active (current cycle) | 4 |
+| Archived | 27 |
 | Backlog | 0 |
 <!-- diatagma:meta:end -->
 
@@ -26,5 +26,4 @@
 - [ ] DIA-013: Epic: Web dashboard — human task interface (epic)
 - [ ] DIA-022: Design web dashboard UX: wireframes and interaction spec for all views
 - [ ] DIA-028: Status drift detection command
-- [ ] DIA-029: Archive command status guard
 <!-- diatagma:cycle:current:end -->

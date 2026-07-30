@@ -16,6 +16,7 @@ from diatagma.cli.output import (
     print_spec_detail,
     print_spec_row,
     print_success,
+    print_warning,
 )
 from diatagma.cli.state import GlobalState
 from diatagma.core.models import SortField, SpecFilter
@@ -261,8 +262,13 @@ def status(
     except Exception as e:
         print_error(str(e))
 
-    if archive and new_status in ("done", "cancelled"):
-        ctx.store.move_to_archive(spec_id, agent_id="cli")
+    if archive:
+        if new_status in ("done", "cancelled"):
+            ctx.store.move_to_archive(spec_id, agent_id="cli")
+        else:
+            print_warning(
+                f"Not archiving {spec_id}: status {new_status} is not terminal."
+            )
 
     if GlobalState.json:
         print_json(result)
