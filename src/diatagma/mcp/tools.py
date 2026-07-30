@@ -287,6 +287,13 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
             **extra,
         )
         cache.put(spec)
+        # A parent epic may have been auto-reopened on disk by the guard;
+        # re-cache it so it isn't dropped from cache-backed reads.
+        if parent:
+            try:
+                cache.put(ctx.store.get(parent))
+            except Exception:
+                pass
         return _spec_detail(spec)
 
     @mcp.tool(
@@ -370,7 +377,7 @@ def register_tools(mcp: FastMCP, specs_dir: Path, cache: SpecCache) -> None:
         all_specs = ctx.refresh_graph()
         result = ctx.lifecycle.update_status(
             spec_id,
-            "in-progress",
+            ctx.config.settings.started_status,
             agent_id=agent_id,
             graph=ctx.graph,
             all_specs=all_specs,

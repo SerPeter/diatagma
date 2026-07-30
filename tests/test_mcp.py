@@ -428,3 +428,57 @@ class TestStatelessness:
         result2 = await mcp_client.call_tool("get_spec", {"spec_id": "TST-001"})
         data2 = json.loads(result2.content[0].text)
         assert data2["meta"]["title"] == "Externally modified"
+
+
+class TestClaimStartedStatus:
+    async def test_claim_uses_configured_started_status(
+        self, tmp_specs_dir, sample_prefixes, sample_templates
+    ):
+        config_dir = tmp_specs_dir / "config"
+        config_dir.mkdir(exist_ok=True)
+        (config_dir / "settings.yaml").write_text(
+            "statuses: [pending, doing, reviewing, done, cancelled]\n"
+            "active_statuses: [doing, reviewing]\n",
+            encoding="utf-8",
+        )
+        (config_dir / "prefixes.yaml").write_text(
+            'TST:\n  description: "t"\n  template: story\n', encoding="utf-8"
+        )
+        tdir = config_dir / "templates"
+        tdir.mkdir(exist_ok=True)
+        (tdir / "story.md").write_text("## Description\n", encoding="utf-8")
+        seed_spec_file(tmp_specs_dir, "TST-001", "Spec")
+        (tmp_specs_dir / "changelog.md").write_text("# Changelog\n", encoding="utf-8")
+
+        mcp_tools._warmed_caches.clear()
+        server = create_mcp_server(tmp_specs_dir)
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "claim_spec", {"spec_id": "TST-001", "agent_id": "a"}
+            )
+            data = json.loads(result.content[0].text)
+            # started_status = active_statuses[0] = "doing", NOT hardcoded in-progress
+            assert data["meta"]["status"] == "doing"
+
+    async def test_create_recaches_reopened_parent(self, mcp_client):
+        epic = await mcp_client.call_tool(
+            "create_spec", {"title": "Epic", "prefix": "TST", "type": "epic"}
+        )
+        epic_id = json.loads(epic.content[0].text)["meta"]["id"]
+        child = await mcp_client.call_tool(
+            "create_spec", {"title": "Child", "prefix": "TST", "parent": epic_id}
+        )
+        child_id = json.loads(child.content[0].text)["meta"]["id"]
+        await mcp_client.call_tool("list_specs", {})  # warm the cache
+        # complete the child → epic auto-completes to done (re-cached)
+        await mcp_client.call_tool(
+            "update_spec", {"spec_id": child_id, "status": "done"}
+        )
+        # add a new child → guard reopens the done epic on disk
+        await mcp_client.call_tool(
+            "create_spec", {"title": "Child2", "prefix": "TST", "parent": epic_id}
+        )
+        # cache-backed read must still see the reopened epic
+        active = await mcp_client.call_tool("list_specs", {"status": "in-progress"})
+        ids = [s["id"] for s in json.loads(active.content[0].text)["specs"]]
+        assert epic_id in ids
